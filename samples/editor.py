@@ -5,13 +5,13 @@ from tqdm import tqdm
 import shutil
 
 """
-将此目录下的所有.sb3（Scratch项目文件）中TurboWarp扩展地址修改为https://www.scratch-cw.top:8007/下的扩展（差别是原来的是英文，这个目录下的是中文）
+将此目录下的所有.sb3（Scratch项目文件）中TurboWarp扩展地址修改为https://extensions.scratch-cw.top/下的扩展（差别是原来的是英文，这个目录下的是中文）
 具体步骤：
 1.遍历每个.sb3文件
 2.使用zipfile解压至文件夹temp（若存在则删除文件夹及其内容）
 3.打开temp\project.json，使用json解析其内容存储字典到变量project
 4.找到project["extensionURLs"]，若不存在则跳过此文件（也不可能不存在）；否则存储值到extensions变量
-5.遍历extensions的所有值，替换其中的所有`https://extensions.turbowarp.org/`为`https://www.scratch-cw.top:8007/`
+5.遍历extensions的所有值，替换其中的所有`https://extensions.turbowarp.org/`为`https://extensions.scratch-cw.top/`
 6.将project转回json字符串，写入temp\project.json（ensureANSI=False）
 7.将temp压缩为zip文件，覆盖原文件
 8.删除temp文件夹
@@ -48,9 +48,9 @@ def main():
             continue
         extensions = project["extensionURLs"]
         
-        # 步骤5：遍历extensions的所有值，替换其中的所有`https://extensions.turbowarp.org/`为`https://www.scratch-cw.top:8007/`
+        # 步骤5：遍历extensions的所有值，替换其中的所有`https://extensions.turbowarp.org/`为`https://extensions.scratch-cw.top/`
         for key in extensions:
-            extensions[key] = extensions[key].replace('https://extensions.turbowarp.org/', 'https://www.scratch-cw.top:8007/')
+            extensions[key] = extensions[key].replace('https://extensions.turbowarp.org/', 'https://extensions.scratch-cw.top/')
         
         # 步骤6：将project转回json字符串，写入temp\project.json（ensure_ascii=False）
         with open(json_path, 'w', encoding='utf-8') as f:
