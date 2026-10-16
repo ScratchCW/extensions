@@ -15635,6 +15635,7 @@
         "Xeltalliv/simple3D@_triangles": "三角形",
         "Xeltalliv/simple3D@_triangle strip": "三角形带",
         "Xeltalliv/simple3D@_triangle fan": "三角形扇",
+        "Xeltalliv/simple3D@_exists": "是否存在",
         "Xeltalliv/simple3D@_inherits from": "继承自",
         "Xeltalliv/simple3D@_is inherited by": "被继承于",
         "Xeltalliv/simple3D@_is valid for drawing": "是否可绘制",

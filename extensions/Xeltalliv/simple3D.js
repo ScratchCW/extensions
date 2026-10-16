@@ -822,6 +822,47 @@
     "estimate own list VRAM usage": (mesh) => mesh.estimateListVRAM(),
     "estimate own texture VRAM usage": (mesh) => mesh.estimateTextureVRAM(),
   };
+  const MeshPropFnsTranslations = {
+    "inherits from": Scratch.translate("inherits from"),
+    "is inherited by": Scratch.translate("is inherited by"),
+    "is valid for drawing": Scratch.translate("is valid for drawing"),
+    "has vertex indices": Scratch.translate("has vertex indices"),
+    "has positions": Scratch.translate("has positions"),
+    "has colors": Scratch.translate("has colors"),
+    "has texture coordinates": Scratch.translate("has texture coordinates"),
+    "has normals": Scratch.translate("has normals"),
+    "has bone indices/weights": Scratch.translate("has bone indices/weights"),
+    "has bones": Scratch.translate("has bones"),
+    "has instanced positions": Scratch.translate("has instanced positions"),
+    "has instanced colors": Scratch.translate("has instanced colors"),
+    "has instanced uvs": Scratch.translate("has instanced uvs"),
+    "has texture": Scratch.translate("has texture"),
+    "texture width": Scratch.translate("texture width"),
+    "texture height": Scratch.translate("texture height"),
+    "texture stores depth": Scratch.translate("texture stores depth"),
+    "texture depth write": Scratch.translate("texture depth write"),
+    "texture depth test": Scratch.translate("texture depth test"),
+    "texture is 2D": Scratch.translate("texture is 2D"),
+    "texture is cube": Scratch.translate("texture is cube"),
+    "texture is loading": Scratch.translate("texture is loading"),
+    "texture has failed to load": Scratch.translate("texture has failed to load"),
+    "primitive type": Scratch.translate("primitive type"),
+    "primitive size": Scratch.translate("primitive size"),
+    "blending type": Scratch.translate("blending type"),
+    "culling type": Scratch.translate("culling type"),
+    "alpha threshold": Scratch.translate("alpha threshold"),
+    "makes opaque": Scratch.translate("makes opaque"),
+    "has billboarding": Scratch.translate("has billboarding"),
+    "has vertex draw range": Scratch.translate("has vertex draw range"),
+    "vertex draw range start": Scratch.translate("vertex draw range start"),
+    "vertex draw range end": Scratch.translate("vertex draw range end"),
+    "vertex draw range length": Scratch.translate("vertex draw range length"),
+    "instance draw limit": Scratch.translate("instance draw limit"),
+    "partial list update enabled": Scratch.translate("partial list update enabled"),
+    "estimate own VRAM usage": Scratch.translate("estimate own VRAM usage"),
+    "estimate own list VRAM usage": Scratch.translate("estimate own list VRAM usage"),
+    "estimate own texture VRAM usage": Scratch.translate("estimate own texture VRAM usage"),
+  };
   let workerSrc = `
   class OffModelImporter {
     constructor(dataRaw) {
@@ -1860,11 +1901,28 @@ void main() {
     "mask": [true, gl.ZERO, gl.SRC_ALPHA, gl.ZERO, gl.SRC_ALPHA, gl.FUNC_ADD],
     "erase": [true, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE_MINUS_SRC_ALPHA, gl.FUNC_ADD],
   };
+  const BlendingsTranslations = {
+    "overwrite color (fastest for opaque)": Scratch.translate("overwrite color (fastest for opaque)"),
+    "default": Scratch.translate("default"),
+    "default behind": Scratch.translate("default behind"),
+    "additive": Scratch.translate("additive"),
+    "subtractive": Scratch.translate("subtractive"),
+    "multiply": Scratch.translate("multiply"),
+    "invert": Scratch.translate("invert"),
+    "invisible": Scratch.translate("invisible"),
+    "mask": Scratch.translate("mask"),
+    "erase": Scratch.translate("erase"),
+  };
   // prettier-ignore
   const Cullings = {
     "nothing": [false],
     "back faces": [true, gl.BACK],
     "front faces": [true, gl.FRONT],
+  };
+  const CullingsTranslations = {
+    "nothing": Scratch.translate("nothing"),
+    "back faces": Scratch.translate("back faces"),
+    "front faces": Scratch.translate("front faces"),
   };
   // prettier-ignore
   const DepthTests = {
@@ -1877,6 +1935,16 @@ void main() {
     "not same": gl.NOTEQUAL,
     "everything": gl.ALWAYS,
   };
+  const DepthTestsTranslations = {
+    "nothing": Scratch.translate("nothing"),
+    "closer": Scratch.translate("closer"),
+    "same": Scratch.translate("same"),
+    "further": Scratch.translate("further"),
+    "closer or same": Scratch.translate("closer or same"),
+    "further or same": Scratch.translate("further or same"),
+    "not same": Scratch.translate("not same"),
+    "everything": Scratch.translate("everything"),
+  };
   // prettier-ignore
   const Primitives = {
     "points": gl.POINTS,
@@ -1887,11 +1955,25 @@ void main() {
     "triangle strip": gl.TRIANGLE_STRIP,
     "triangle fan": gl.TRIANGLE_FAN,
   };
+  const PrimitivesTranslations = {
+    "points": Scratch.translate("points"),
+    "lines": Scratch.translate("lines"),
+    "line loop": Scratch.translate("line loop"),
+    "line strip": Scratch.translate("line strip"),
+    "triangles": Scratch.translate("triangles"),
+    "triangle strip": Scratch.translate("triangle strip"),
+    "triangle fan": Scratch.translate("triangle fan"),
+  };
   // prettier-ignore
   const ClearLayers = {
     "color": gl.COLOR_BUFFER_BIT,
     "depth": gl.DEPTH_BUFFER_BIT,
     "color and depth": gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT,
+  };
+  const ClearLayersTranslations = {
+    "color": Scratch.translate("color"),
+    "depth": Scratch.translate("depth"),
+    "color and depth": Scratch.translate("color and depth"),
   };
   const meshes = new Map();
   const programs = new ProgramManager();
@@ -5234,11 +5316,11 @@ void main() {
       },
       clearLayers: {
         acceptReporters: true,
-        items: Object.keys(ClearLayers).map(key => ({text: Scratch.translate(key), value: key})),
+        items: Object.keys(ClearLayers).map(key => ({text: ClearLayersTranslations[key], value: key})),
       },
       primitives: {
         acceptReporters: true,
-        items: Object.keys(Primitives).map(key => ({text: Scratch.translate(key), value: key})),
+        items: Object.keys(Primitives).map(key => ({text: PrimitivesTranslations[key], value: key})),
       },
       onOff: {
         acceptReporters: true,
@@ -5256,7 +5338,7 @@ void main() {
       },
       meshProperties: {
         acceptReporters: false,
-        items: ["exists", ...Object.keys(MeshPropFns).map(key => ({text: Scratch.translate(key), value: key}))],
+        items: [{text: Scratch.translate("exists"), value: "exists"}, ...Object.keys(MeshPropFns).map(key => ({text: MeshPropFnsTranslations[key], value: key}))],
       },
       axis: {
         acceptReporters: false,
@@ -5290,11 +5372,11 @@ void main() {
       },
       blending: {
         acceptReporters: true,
-        items: Object.keys(Blendings).map(key => ({text: Scratch.translate(key), value: key})),
+        items: Object.keys(Blendings).map(key => ({text: BlendingsTranslations[key], value: key})),
       },
       culling: {
         acceptReporters: true,
-        items: Object.keys(Cullings).map(key => ({text: Scratch.translate(key), value: key})),
+        items: Object.keys(Cullings).map(key => ({text: CullingsTranslations[key], value: key})),
       },
       skinningTransforms: {
         acceptReporters: true,
@@ -5445,7 +5527,7 @@ void main() {
       },
       depthTest: {
         acceptReporters: true,
-        items: Object.keys(DepthTests).map(key => ({text: Scratch.translate(key), value: key})),
+        items: Object.keys(DepthTests).map(key => ({text: DepthTestsTranslations[key], value: key})),
       },
       directions: {
         acceptReporters: true,
