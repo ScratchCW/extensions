@@ -1,114 +1,114 @@
 # Simple 3D
 
-## Table of contents
-1. [What is this](#description)
-2. [How it works](#main-concepts)
-3. [Drawing things](#simple-drawing)
-4. [Setting up transformations](#transformations)
-5. [Order in which different steps are performed](#step-order)
-6. [Blocks](#blocks)
-6.1. [Clearing](#blocks-clearing)
-6.2. [Meshes](#blocks-meshes)
-6.3. [Textures](#blocks-textures)
-6.4. [Text measurement](#blocks-text-measurement)
-6.5. [Fonts](#blocks-fonts)
-6.6. [View transformations](#blocks-view-transformations)
-6.7. [Manual transformations](#blocks-manual-transformations)
-6.8. [Rendering into textures](#blocks-rendertargets)
-6.9. [Tinting and fog](#blocks-tinting-fog)
-6.10. [Resolution changes](#blocks-resolution)
-7. [Integration with other extensions](#ext-integration)
-7.1. [Augmented Reality extension](#ar-integration)
+## 目录
+1. [这是什么](#description)
+2. [工作原理](#main-concepts)
+3. [绘制内容](#simple-drawing)
+4. [设置变换](#transformations)
+5. [不同步骤的执行顺序](#step-order)
+6. [积木块](#blocks)
+6.1. [清除](#blocks-clearing)
+6.2. [网格](#blocks-meshes)
+6.3. [纹理](#blocks-textures)
+6.4. [文本测量](#blocks-text-measurement)
+6.5. [字体](#blocks-fonts)
+6.6. [视图变换](#blocks-view-transformations)
+6.7. [手动变换](#blocks-manual-transformations)
+6.8. [渲染到纹理](#blocks-rendertargets)
+6.9. [着色和雾](#blocks-tinting-fog)
+6.10. [分辨率更改](#blocks-resolution)
+7. [与其他扩展的集成](#ext-integration)
+7.1. [增强现实扩展](#ar-integration)
 
 
-## What is this <a name="description"></a>
-**Simple 3D** is an extension by [Vadik1](https://scratch.mit.edu/users/Vadik1) meant to enable creation of GPU accelerated 3D projects. It is not designed for making graphically complex 3D projects (for that, see [Pen+ v7](https://github.com/TurboWarp/extensions/pull/1377) and [WebGL2](https://github.com/TurboWarp/extensions/discussions/378) extensions, both with programmable shaders) and instead it's main focus is allowing people to create 3D projects easily and quickly. Nevertheless, despite lack of programmable shaders, it is still quite powerful. It covers the wide range of usages from something as high level as making an [AR project in less than 20 blocks](#ar-example) with models loaded from OBJ files, to something more low level like doing all the calculations on CPU and streaming transformed polygons every frame (like [Pen+](https://extensions.turbowarp.org/obviousAlexC/penPlus.js)). And of course everything in-between.
+## 这是什么 <a name="description"></a>
+**Simple 3D** 是由 [Vadik1](https://scratch.mit.edu/users/Vadik1) 制作的扩展，旨在让用户能够创建 GPU 加速的 3D 项目。它并非为制作图形复杂的 3D 项目而设计（如需此类功能，请参阅 [Pen+ v7](https://github.com/TurboWarp/extensions/pull/1377) 和 [WebGL2](https://github.com/TurboWarp/extensions/discussions/378) 扩展，两者都支持可编程着色器），而是将主要重心放在让用户能够轻松快捷地创建 3D 项目上。尽管如此，尽管缺少可编程着色器，它仍然相当强大。它涵盖了广泛的使用场景，从像用不到 20 个积木块制作一个[不到 20 个积木块的 AR 项目](#ar-example)并从 OBJ 文件加载模型这样的高层次应用，到像在 CPU 上进行所有计算并每帧流式传输变换后的多边形（如 [Pen+](https://extensions.turbowarp.org/obviousAlexC/penPlus.js)）这样的低层次应用。当然，也涵盖了两者之间的各种情况。
 
-It could also be useful for making certain kinds of 2D projects, thanks to it's ability to render large quantities of similar objects with instancing (e.g. particles), construct 2D meshes out of triangles, rendering into textures allowing multi-pass rendering and more advanced clipping than [Clipping &amp; Blending](https://extensions.turbowarp.org/Xeltalliv/clippingblending.js) extension. It can be used for 2D image processing that can for example later be used as costumes using [Skins](https://extensions.turbowarp.org/Lily/Skins.js) extension. It's support of vertex weights and indices can be used for skeletal animation of 2D characters with deforming body parts rather than using rigid images, or even for smoothly extending UI elements.
+由于它能够通过实例化渲染大量相似对象（例如粒子），构造由三角形组成的 2D 网格，渲染到纹理以实现多通道渲染和比 [Clipping & Blending](https://extensions.turbowarp.org/Xeltalliv/clippingblending.js) 扩展更高级的裁剪，因此它对于制作某些类型的 2D 项目也很有用。它可用于 2D 图像处理，之后可以通过 [Skins](https://extensions.turbowarp.org/Lily/Skins.js) 扩展用作造型。它支持的顶点权重和索引可用于 2D 角色的骨骼动画，使身体部位变形而非使用刚性图像，甚至可用于平滑扩展 UI 元素。
 
-## How it works <a name="main-concepts"></a>
-Scratch has a background layer, a video layer, a pen layer and a sprite layer. This extension adds another layer - simple3D between video and pen layers. **High quality pen mode also affects it.**
+## 工作原理 <a name="main-concepts"></a>
+Scratch 有背景层、视频层、画笔层和角色层。此扩展增加了另一个层——simple3D，位于视频层和画笔层之间。**高质量画笔模式也会影响它。**
 
-The key concepts in this extension are the meshes and transformations.
+此扩展的关键概念是网格和变换。
 
-Meshes store the 3D model data and can be drawn. They are kind of like costumes in a stamp-based project. That is, if you want to make a project that draws many copies of some costume in different locations using stamps, you will only have 1 costume, store all the locations in a list in whatever format you consider appropriate, and every frame you will clear the screen and re-stamp that costume in all the locations from the list. 
+网格存储 3D 模型数据，并可以被绘制。它们有点类似于基于图章的项目中的造型。也就是说，如果你想制作一个项目，使用图章在不同位置绘制某个造型的许多副本，你只会有一个造型，将所有位置以任何你认为合适的格式存储在列表中，然后每一帧你都会清除屏幕，并根据列表中的所有位置重新盖上该造型的图章。
 
-It works the same way with this extension. If you have 10 identical 3D boxes, you will only create one mesh. Then every frame, first clear the screen, and after that loop over the list, for each box, setting up the correct transformation and drawing that one mesh.
+使用此扩展也是同样的道理。如果你有 10 个相同的 3D 盒子，你只会创建一个网格。然后每一帧，首先清除屏幕，之后遍历列表，为每个盒子设置正确的变换并绘制那一个网格。
 
-So in short, **this extension does not have any kind of scenes, objects, cameras, etc**, you have to keep track of it yourself.
+简而言之，**此扩展没有任何形式的场景、对象、摄像机等**，你必须自己跟踪这些。
 
 ---
 
-3D models consist of vertices which together form primitives (points, lines, triangles). Each vertex has either 2D (XY) or 3D (XYZ) location described with 2 or 3 numbers respectively. Before drawing the mesh, you would usually set up transformation, which tells how to take those initial locations and transform them to correct location on your 2D screen. The typical way to do it, is to chain multiple simple transformations together. Simple transformations can be translation (offsetting), rotation, scaling, mirroring, skewing, etc.
+3D 模型由顶点组成，这些顶点共同构成图元（点、线、三角形）。每个顶点都有用 2 个或 3 个数字分别描述的 2D（XY）或 3D（XYZ）位置。在绘制网格之前，你通常会设置变换，它告诉如何将这些初始位置转换到 2D 屏幕上的正确位置。通常的做法是将多个简单的变换链接在一起。简单变换可以是平移（偏移）、旋转、缩放、镜像、倾斜等。
 
-## Drawing things <a name="simple-drawing"></a>
+## 绘制内容 <a name="simple-drawing"></a>
 
 > [!TIP]
-> For a more complete tutorial, see [here](https://xeltalliv.github.io/simple3d-extension/examples/) (external link).
+> 如需更完整的教程，请参见[此处](https://xeltalliv.github.io/simple3d-extension/examples/)（外部链接）。
 
-For now let's not worry about transformations and just draw something as is.
-First step would be to clear the screen:
+现在让我们先不担心变换，直接按原样绘制一些东西。
+第一步是清除屏幕：
 ```scratch
-set clear color R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
-clear (color and depth v) :: sensing
+设置清除颜色 R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
+清除 [颜色和深度 v] :: sensing
 ```
-After running that the screen should turn gray.
-Now let's draw 2 triangles arranged into a rectangle. First create a mesh:
+运行后屏幕应该变成灰色。
+现在让我们绘制 2 个三角形，组成一个矩形。首先创建一个网格：
 ```scratch
-create mesh [my mesh] :: sensing
+创建网格 [my mesh] :: sensing
 ```
-Then create 2 lists `posX` and `posY`.
-Fill `posX` with:
-```
--0.9
-0.9
--0.9
--0.9
-0.9
-0.9
-```
-Fill `posY` with:
+然后创建 2 个列表 `posX` 和 `posY`。
+用以下内容填充 `posX`：
 ```
 -0.9
+0.9
+-0.9
+-0.9
+0.9
+0.9
+```
+用以下内容填充 `posY`：
+```
+-0.9
 -0.9
 0.9
 0.9
 -0.9
 0.9
 ```
-then set mesh's positions to it:
+然后设置网格的位置：
 ```scratch
-set [my mesh] positions XY [posX v] [posY v] :: sensing
+设置 [my mesh] 位置 XY [posX v] [posY v] :: sensing
 ```
-and finally draw it:
+最后绘制它：
 ```scratch
-draw [my mesh] :: sensing
+绘制网格 [my mesh] :: sensing
 ```
-The result should look something like this:
-![white rectangle on gray background](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAloAAAHEAgMAAACcsWzXAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV/TSkUqImYQcchQnSyCiohTrUIRKoRaoVUH89EvaNKQpLg4Cq4FBz8Wqw4uzro6uAqC4AeIs4OToouU+L+k0CLGg+N+vLv3uHsHcI2KolmhOKDptplOJoRsblUIvyIEHv2YxbikWMacKKbgO77uEWDrXYxl+Z/7c/SqeUsBAgJxXDFMm3iDeHrTNhjvE/NKSVKJz4nHTLog8SPTZY/fGBdd5lgmb2bS88Q8sVDsYLmDlZKpEU8RR1VNp3wu67HKeIuxVqkprXuyF0by+soy02kOI4lFLEGEABk1lFGBjRitOikW0rSf8PEPuX6RXDK5ylDIsYAqNEiuH+wPfndrFSYnvKRIAuh6cZyPESC8CzTrjvN97DjNEyD4DFzpbX+1Acx8kl5va9EjoG8buLhua/IecLkDDD4Zkim5UpAmVygA72f0TTlg4BboWfN6a+3j9AHIUFepG+DgEBgtUva6z7u7O3v790yrvx8KVHLj7WPAsgAAAAlQTFRFNDQ0gICA////76SQuwAAAAlwSFlzAAAYTAAAGHQBn6hAIAAAAAd0SU1FB+gEFBIAAu2UQ3UAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABNUlEQVR42u3OUQkAIBAFsCthH0toR01pAX+FB24JVhWqjUTdy8vLy8vLy8vLy8vr99fcEZaXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5fX7RXGy8vLy8vLy8vLy8vr/SvUAWUTfy76T1mWAAAAAElFTkSuQmCC)
-The screen coordinate system used by this extension is not scratch's typical 480x360 (from -240 to 240 for X and from -180 to 180 for Y), but instead it is 2x2 (from -1 to 1 on both axis). It is the same as in WebGL and OpenGL.
-Here we created triangles that have vertex coordinates at -0.9 and 0.9, which do not quite reach the boundaries of the screen, even though they get close.
+结果应该看起来像这样：
+![灰色背景上的白色矩形](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAloAAAHEAgMAAACcsWzXAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV/TSkUqImYQcchQnSyCiohTrUIRKoRaoVUH89EvaNKQpLg4Cq4FBz8Wqw4uzro6uAqC4AeIs4OToouU+L+k0CLGg+N+vLv3uHsHcI2KolmhOKDptplOJoRsblUIvyIEHv2YxbikWMacKKbgO77uEWDrXYxl+Z/7c/SqeUsBAgJxXDFMm3iDeHrTNhjvE/NKSVKJz4nHTLog8SPTZY/fGBdd5lgmb2bS88Q8sVDsYLmDlZKpEU8RR1VNp3wu67HKeIuxVqkprXuyF0by+soy02kOI4lFLEGEABk1lFGBjRitOikW0rSf8PEPuX6RXDK5ylDIsYAqNEiuH+wPfndrFSYnvKRIAuh6cZyPESC8CzTrjvN97DjNEyD4DFzpbX+1Acx8kl5va9EjoG8buLhua/IecLkDDD4Zkim5UpAmVygA72f0TTlg4BboWfN6a+3j9AHIUFepG+DgEBgtUva6z7u7O3v790yrvx8KVHLj7WPAsgAAAAlQTFRFNDQ0gICA////76SQuwAAAAlwSFlzAAAYTAAAGHQBn6hAIAAAAAd0SU1FB+gEFBIAAu2UQ3UAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABNUlEQVR42u3OUQkAIBAFsCthH0toR01pAX+FB24JVhWqjUTdy8vLy8vLy8vLy8vr99fcEZaXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5fX7RXGy8vLy8vLy8vLy8vr/SvUAWUTfy76T1mWAAAAAElFTkSuQmCC)
+此扩展使用的屏幕坐标系不是 Scratch 典型的 480x360（X 从 -240 到 240，Y 从 -180 到 180），而是 2x2（两个轴都从 -1 到 1）。这与 WebGL 和 OpenGL 中相同。
+这里我们创建的三角形顶点坐标在 -0.9 和 0.9 处，虽然没有完全到达屏幕边界，但已经很接近了。
 
-Also, here we specified 6 vertices. Each triangle has 3 vertices, so it was treated as 6/3=2 triangles.
-But specifying 3 vertices per each triangle is not the only way. In cases when some vertices are the same for multiple triangles, there are ways to specify them once and reuse them afterwards rather than duplicating the data. There are 2 main ways to do it:
+另外，这里我们指定了 6 个顶点。每个三角形有 3 个顶点，所以它被当作 6/3=2 个三角形处理。
+但每个三角形指定 3 个顶点并不是唯一的方式。当某些顶点被多个三角形共用时，有办法只指定它们一次然后重复使用，而不是复制数据。主要有 2 种方式：
 
-### List of indices
-With this way, there is a way to create another list which will reference which vertices to use in which order. To add it to our example:
-Fill `posX` with:
+### 索引列表
+使用这种方式，可以创建另一个列表来引用以何种顺序使用哪些顶点。将其添加到我们的示例中：
+用以下内容填充 `posX`：
 ```
 -0.9
 0.9
 -0.9
 0.9
 ```
-Fill `posY` with:
+用以下内容填充 `posY`：
 ```
 -0.9
 -0.9
 0.9
 0.9
 ```
-Create another list `indices` and fill it with:
+创建另一个列表 `indices` 并填充：
 ```
 1
 2
@@ -117,1069 +117,1067 @@ Create another list `indices` and fill it with:
 2
 4
 ```
-Now reupload XY positions and upload the list of indices into the mesh, clear the screen and draw the mesh again. Result should look the same.
+现在重新上传 XY 位置并将索引列表上传到网格，清除屏幕并再次绘制网格。结果应该看起来一样。
 ```scratch
-set clear color R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
-clear (color and depth v) :: sensing
-create mesh [my mesh] :: sensing
-set [my mesh] positions XY [posX v] [posY v] :: sensing
-set [my mesh] vertex indices [indices v] :: sensing
-draw [my mesh] :: sensing
+设置清除颜色 R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
+清除 [颜色和深度 v] :: sensing
+创建网格 [my mesh] :: sensing
+设置 [my mesh] 位置 XY [posX v] [posY v] :: sensing
+设置 [my mesh] 顶点索引 [indices v] :: sensing
+绘制网格 [my mesh] :: sensing
 ```
 
-### Chained primitive types
-Another way to do it is to switch mesh from using just "triangles" to using "triangle strips" or "triangle fans".
-With triangle strip, the first 2 vertices are processed normally, and then each subsequent vertex get combined with the previous 2 into a triangle.
-With triangle fan, the first 2 vertices are processed normally, and then each subsequent vertex get combined with the previous one and the first one into a triangle.
+### 链式图元类型
+另一种方法是将网格从仅使用"三角形"切换为使用"三角形带"或"三角形扇"。
+使用三角形带时，前 2 个顶点正常处理，然后每个后续顶点与前 2 个顶点组合成一个三角形。
+使用三角形扇时，前 2 个顶点正常处理，然后每个后续顶点与前一个顶点和第一个顶点组合成一个三角形。
 ```scratch
-set clear color R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
-clear (color and depth v) :: sensing
-create mesh [my mesh] :: sensing
-set [my mesh] positions XY [posX v] [posY v] :: sensing
-set [my mesh] primitives (traingle strip v) :: sensing
-draw [my mesh] :: sensing
+设置清除颜色 R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
+清除 [颜色和深度 v] :: sensing
+创建网格 [my mesh] :: sensing
+设置 [my mesh] 位置 XY [posX v] [posY v] :: sensing
+设置 [my mesh] 图元 [三角形带 v] :: sensing
+绘制网格 [my mesh] :: sensing
 ```
-Result should once again look the same.
+结果应该再次看起来一样。
 
-### Primitive restart index
-"triangle strips" and "triangle fans" are efficient, but when using it you only get 1 long continuous mesh of triangles, meaning that to draw many "strips" or "fans" you will have to call "draw mesh" many times, which makes it less efficient.
+### 图元重启索引
+"三角形带"和"三角形扇"很高效，但使用它们时你只能得到 1 个连续的长三角形网格，这意味着要绘制许多"带"或"扇"，你必须多次调用"绘制网格"，这使其效率降低。
 
-The solution to this is to use "triangle strips" and "triangle fans" together with list of indices. If you specify index 0 or below, it will interrupt the previous chain of triangles and restart a new one.
+解决方案是将"三角形带"和"三角形扇"与索引列表一起使用。如果指定索引 0 或以下，它将中断前一个三角形链并重新开始一个新的。
 
-Same applies to "line strip" and "line loop".
+这同样适用于"线带"和"线环"。
 
-## Setting up transformations <a name="transformations"></a>
-The typical sequence of simple transformation for a 3D project goes like this:
-You'd start off with having a 3D model in its own coordinate system (model space), with all vertex positions stored relative to its origin. The first step after this would be to transform it to the world coordinate system. If the object has its own rotation, rotate every vertex around its origin (0,0,0) by the correct amount of degrees. If it's scaled, scale them. Once that is done, offset every vertex by the object's world position. Now the positions of all of the vertices are in the world coordinate system (world space).
+## 设置变换 <a name="transformations"></a>
+3D 项目的典型简单变换序列如下：
+你首先有一个处于自身坐标系（模型空间）中的 3D 模型，所有顶点位置都相对于其原点存储。此后的第一步是将其变换到世界坐标系。如果对象有自己的旋转，则将其每个顶点绕其原点 (0,0,0) 旋转正确的度数。如果它被缩放了，则缩放它们。完成后，将每个顶点按对象的世界位置偏移。现在所有顶点的位置都在世界坐标系（世界空间）中。
 
-The next step is to transfrorm them to the coordinate system relative to the viewer, where the viewer is at X:0, Y:0, Z:0 and is always facing negative Z. In 3D projects on normal ("vanilla") Scratch, it is common for the viewer to be facing positive Z, where the more Z something has, the further away it is in front of the viewer. In the case of this extension - as well as most software outside of Scratch - the **less** Z something has, the further it is in front of the viewer. To do this transformation, first subtract camera position from position of every vertex. That will place the camera in the origin of the world and position everything relatively to it, but rotation is still not taken into account. To use it, rotate every point by negated/inverse camera rotation.
+下一步是将它们变换到相对于观察者的坐标系，其中观察者位于 X:0, Y:0, Z:0，并且始终面向负 Z 方向。在普通（"原版"）Scratch 的 3D 项目中，观察者通常面向正 Z 方向，Z 越大，在观察者前方的距离越远。而在此扩展中——以及 Scratch 之外的大多数软件中——Z 越**小**，在观察者前方的距离越远。要进行此变换，首先从每个顶点的位置中减去摄像机位置。这会将摄像机置于世界的原点，并将所有内容相对于它定位，但旋转仍未考虑。要使用它，请将每个点按取反/逆摄像机旋转进行旋转。
 
-What you now have are 3D positions relative to the camera. But your screen is 2D, so the last step is to do the projection. The general gist of it is that you divide all X and Y by Z, so that the further something is, the smaller it is and the closer it is to the center of the screen. And while doing that, clipping everything that goes offscreen or too close and behind you.
+现在你拥有的是相对于摄像机的 3D 位置。但你的屏幕是 2D 的，所以最后一步是进行投影。其大致要点是将所有 X 和 Y 除以 Z，这样越远的东西越小，越靠近屏幕中心。同时，裁剪掉所有超出屏幕或太近以及在你身后的东西。
 
-But in reality it's somewhat more complicated.
-You first transform X, Y, Z into X, Y, Z and W of the clip space and then GPU automatically clips X, Y and Z to the rangle from -W to W, and then divides
-X, Y, Z by W, so X, Y, Z end up in range from -1 to 1. Where W is the actual depth, while Z is depth converted to the correct range to be used with the
-depth buffer (everything below -1 and above 1 gets clipped) (too far and too close).
+但实际上这要复杂一些。
+你首先将 X、Y、Z 变换为裁剪空间的 X、Y、Z 和 W，然后 GPU 自动将 X、Y 和 Z 裁剪到 -W 到 W 的范围，然后
+将 X、Y、Z 除以 W，使 X、Y、Z 最终落在 -1 到 1 的范围内。其中 W 是实际深度，而 Z 是转换为正确范围的深度，用于深度缓冲区（低于 -1 和高于 1 的部分会被裁剪）（太远和太近）。
 
-If this sounds complicated, don't worry, Simple3D extension mostly handles it for you.
+如果这听起来很复杂，别担心，Simple3D 扩展大部分会为你处理。
 
-So let's recap:
+所以让我们回顾一下：
 ```
-when given vertex coordinates x, y, z in model space:
+给定模型空间中的顶点坐标 x, y, z 时：
 
-scale by object scale
-rotate by object orientation
-translate by object position
+按对象缩放进行缩放
+按对象方向进行旋转
+按对象位置进行平移
 
-translate by negative camera position
-rotate by negative camera orientation
+按负摄像机位置进行平移
+按负摄像机方向进行旋转
 
-convert to clip space
+转换为裁剪空间
 
-divide X,Y,Z by depth W (done by GPU, cannot be controlled)
-draw to the screen at X,Y. Use Z for depth check.
+将 X,Y,Z 除以深度 W（由 GPU 完成，无法控制）
+在 X,Y 处绘制到屏幕。使用 Z 进行深度检查。
 ```
 
-And now it's time to make some actual Simple3D code.
-In Simple3D, those transformations are combined into 1 big transformation, and all the steps have to be specified in reverse.
+现在是时候编写一些实际的 Simple3D 代码了。
+在 Simple3D 中，这些变换被合并为 1 个大的变换，所有步骤都必须以相反的顺序指定。
 ```scratch
-start with perspective FOV (90) near (0.1) far (1000) :: sensing
-rotate around [X v] by ((0) - (camRotX)) degrees :: sensing
-rotate around [Y v] by ((0) - (camRotY)) degrees :: sensing
-move X ((0) - (camX)) Y ((0) - (camY)) Z ((0) - (camZ)) :: sensing
-move X (objectX) Y (objectY) Z (objectZ) :: sensing
-rotate around [Y v] by (objectRotY) degrees :: sensing
-rotate around [X v] by (objectRotX) degrees :: sensing
-scale X (objectSizeX) Y (objectSizeY) Z (objectSizeZ) :: sensing
-draw mesh [my mesh] :: sensing
+以透视投影开始 FOV: (90) 近: (0.1) 远: (1000) :: sensing
+绕 [X v] 轴旋转 ((0) - (camRotX)) 度 :: sensing
+绕 [Y v] 轴旋转 ((0) - (camRotY)) 度 :: sensing
+移动 X ((0) - (camX)) Y ((0) - (camY)) Z ((0) - (camZ)) :: sensing
+移动 X (objectX) Y (objectY) Z (objectZ) :: sensing
+绕 [Y v] 轴旋转 (objectRotY) 度 :: sensing
+绕 [X v] 轴旋转 (objectRotX) 度 :: sensing
+缩放 X (objectSizeX) Y (objectSizeY) Z (objectSizeZ) :: sensing
+绘制网格 [my mesh] :: sensing
 ```
 
-Doing all of those steps again for every mesh you want to draw is inefficient. This is where doing steps in reverse becomes helpful. The wrapper block will save the transformation when entered, and will restore it when exited. Using this, it's possible to do the following:
+为每个要绘制的网格再次执行所有这些步骤是低效的。这就是以相反顺序执行步骤变得有用的地方。包装器积木块在进入时会保存变换，并在退出时恢复它。使用这个，可以做到以下事情：
 ```scratch
-start with perspective FOV (90) near (0.1) far (1000) :: sensing
-rotate around [X v] by ((0) - (camRotX)) degrees :: sensing
-rotate around [Y v] by ((0) - (camRotY)) degrees :: sensing
-move X ((0) - (camX)) Y ((0) - (camY)) Z ((0) - (camZ)) :: sensing
-repeat (10)
-wrapper {
+以透视投影开始 FOV: (90) 近: (0.1) 远: (1000) :: sensing
+绕 [X v] 轴旋转 ((0) - (camRotX)) 度 :: sensing
+绕 [Y v] 轴旋转 ((0) - (camRotY)) 度 :: sensing
+移动 X ((0) - (camX)) Y ((0) - (camY)) Z ((0) - (camZ)) :: sensing
+重复 (10)
+包装器 {
 ...
-move X (objectX) Y (objectY) Z (objectZ) :: sensing
-rotate around [Y v] by (objectRotY) degrees :: sensing
-rotate around [X v] by (objectRotX) degrees :: sensing
-scale X (objectSizeX) Y (objectSizeY) Z (objectSizeZ) :: sensing
-draw mesh [my mesh] :: sensing
+移动 X (objectX) Y (objectY) Z (objectZ) :: sensing
+绕 [Y v] 轴旋转 (objectRotY) 度 :: sensing
+绕 [X v] 轴旋转 (objectRotX) 度 :: sensing
+缩放 X (objectSizeX) Y (objectSizeY) Z (objectSizeZ) :: sensing
+绘制网格 [my mesh] :: sensing
 } :: sensing
 end
 ```
-This will work and it is efficient, however this extension also provides advanced features (such as fog, instancing, and billboarding) that will need to intervene in some of the intermediate steps.
-This means when you create one big transformation by yourself, it will have no way of doing that. This is why currently the correct way to setup transformations is like this:
+这会起作用，而且很高效，但是此扩展还提供了高级功能（如雾、实例化和公告板），这些功能需要在某些中间步骤中进行干预。
+这意味着当你自己创建一个大的变换时，它无法做到这一点。这就是为什么目前设置变换的正确方式是这样的：
 ```scratch
-configure [to projected from view space v] transformation :: sensing
-start with perspective FOV (90) near (0.1) far (1000) :: sensing
+配置 [从视图空间到投影 v] 变换 :: sensing
+以透视投影开始 FOV: (90) 近: (0.1) 远: (1000) :: sensing
 
-configure [to view space from world space v] transformation :: sensing
-start with no transformation :: sensing
-rotate around [X v] by ((0) - (camRotX)) degrees :: sensing
-rotate around [Y v] by ((0) - (camRotY)) degrees :: sensing
-move X ((0) - (camX)) Y ((0) - (camY)) Z ((0) - (camZ)) :: sensing
-repeat (10)
+配置 [从世界空间到视图空间 v] 变换 :: sensing
+以无变换开始 :: sensing
+绕 [X v] 轴旋转 ((0) - (camRotX)) 度 :: sensing
+绕 [Y v] 轴旋转 ((0) - (camRotY)) 度 :: sensing
+移动 X ((0) - (camX)) Y ((0) - (camY)) Z ((0) - (camZ)) :: sensing
+重复 (10)
 ...
-configure [to world space from model space v] transformation :: sensing
-start with no transformation :: sensing
-move X (objectX) Y (objectY) Z (objectZ) :: sensing
-rotate around [Y v] by (objectRotY) degrees :: sensing
-rotate around [X v] by (objectRotX) degrees :: sensing
-scale X (objectSizeX) Y (objectSizeY) Z (objectSizeZ) :: sensing
-draw mesh [my mesh] :: sensing
+配置 [从模型空间到世界空间 v] 变换 :: sensing
+以无变换开始 :: sensing
+移动 X (objectX) Y (objectY) Z (objectZ) :: sensing
+绕 [Y v] 轴旋转 (objectRotY) 度 :: sensing
+绕 [X v] 轴旋转 (objectRotX) 度 :: sensing
+缩放 X (objectSizeX) Y (objectSizeY) Z (objectSizeZ) :: sensing
+绘制网格 [my mesh] :: sensing
 end
 ```
-The extension allows you to split your large transformation into 3 separate transformations, which will be applied sequentially, allowing some of the features to act inbetween.
-It also allows you to easily work between different coordinate systems using those blocks:
+此扩展允许你将大的变换拆分为 3 个独立的变换，它们将按顺序应用，允许某些功能在中间起作用。
+它还允许你使用以下积木块轻松地在不同坐标系之间工作：
 ```scratch
-transform X (0) Y (0) Z (0) from [world space v] to [model space v] :: sensing
-transform direction X (0) Y (0) Z (0) from [world space v] to [model space v] :: sensing
+变换 X (0) Y (0) Z (0) 从 [世界空间 v] 到 [模型空间 v] :: sensing
+变换方向 X (0) Y (0) Z (0) 从 [世界空间 v] 到 [模型空间 v] :: sensing
 ```
 
-## Order in which different steps are performed <a name="step-order"></a>
-### Vertex positions
-For each vertex, the final position calculation goes as follows:
-1. vertex position is read
-2. skinning is applied
-3. transformed from model space to world space
-4. transformed by instance transform
-5. transformed from world space to view space
-6. transformed from veiw space to clip space
-7. division of XYZ by W (performed automatically by the GPU)
+## 不同步骤的执行顺序 <a name="step-order"></a>
+### 顶点位置
+对于每个顶点，最终位置的计算如下：
+1. 读取顶点位置
+2. 应用蒙皮
+3. 从模型空间变换到世界空间
+4. 由实例变换进行变换
+5. 从世界空间变换到视图空间
+6. 从视图空间变换到裁剪空间
+7. XYZ 除以 W（由 GPU 自动执行）
 
-When billboarding is enabled:
-1. vertex position is read
-2. skinning is applied
-3. transformed from model space to world space
-4. position is copied elsewhere, while original is replaced by (0,0,0)
-5. transformed by instance transform
-6. transformed from world space to view space
-7. saved position is added to current position
-8. transformed from view space to clip space
-9. division of XYZ by W (performed automatically by the GPU)
+当启用公告板时：
+1. 读取顶点位置
+2. 应用蒙皮
+3. 从模型空间变换到世界空间
+4. 位置被复制到别处，而原始位置被替换为 (0,0,0)
+5. 由实例变换进行变换
+6. 从世界空间变换到视图空间
+7. 保存的位置被添加到当前位置
+8. 从视图空间变换到裁剪空间
+9. XYZ 除以 W（由 GPU 自动执行）
 
-### Vertex colors
-1. vertex color is read, white if not provided
-2. multiplied by instance color
+### 顶点颜色
+1. 读取顶点颜色，如果未提供则为白色
+2. 乘以实例颜色
 
-### Vertex UVs
-For each vertex, the UV texture coordinates at it are calculated as follows:
-1. vertex UVs are read
-2. scaled by instance UV scale (3rd and 4th components)
-3. added instance UV offset (1st and 2nd components)
-4. mesh UV offset is applied
+### 顶点 UV
+对于每个顶点，其上的 UV 纹理坐标计算如下：
+1. 读取顶点 UV
+2. 按实例 UV 缩放（第 3 和第 4 个分量）进行缩放
+3. 加上实例 UV 偏移（第 1 和第 2 个分量）
+4. 应用网格 UV 偏移
 
-### Pixel Colors
-For each pixel, the final color calculation goes as follows:
-1. texture is read, white if texture is not provided
-2. multiplied by interpolated vertex color RGBA
-3. alpha threshold check is performed
-4. "make opaque" is applied
-5. multiplied by global color multiplier
-6. added global color adder
-7. fog is applied
+### 像素颜色
+对于每个像素，最终颜色计算如下：
+1. 读取纹理，如果未提供纹理则为白色
+2. 乘以插值的顶点颜色 RGBA
+3. 执行 alpha 阈值检查
+4. 应用"设为不透明"
+5. 乘以全局颜色乘数
+6. 加上全局颜色加数
+7. 应用雾
 
 
-## Blocks <a name="blocks"></a>
-### Clearing <a name="blocks-clearing"></a>
+## 积木块 <a name="blocks"></a>
+### 清除 <a name="blocks-clearing"></a>
 ```scratch
-reset everything :: sensing
+重置所有内容 :: sensing
 ```
-Resets everything to the initial state as if the extension was freshly loaded. It also deletes meshes and shader cache.
+将所有内容重置为初始状态，如同扩展刚加载一样。它还会删除网格和着色器缓存。
 
 ---
 ```scratch
-clear (color and depth v) :: sensing
+清除 [颜色和深度 v] :: sensing
 ```
-Clears the color and/or depth of the selected render target.
+清除所选渲染目标的颜色和/或深度。
 
 ---
 ```scratch
-set clear color R:(0.5) G:(0.5) B:(0.5) A:(1) :: sensing
+设置清除颜色 R: (0.5) G: (0.5) B: (0.5) A: (1) :: sensing
 ```
-Sets clear color to the specified Red, Green, Blue and Alpha (Opacity) values in range from 0 to 1.
-Clear color is a global value.
+将清除颜色设置为指定的红、绿、蓝和 Alpha（不透明度）值，范围从 0 到 1。
+清除颜色是一个全局值。
 
 ---
 
 ```scratch
-set depth test (closer v) write (on v) :: sensing
+深度测试 [更近 v] 写入 [开 v] :: sensing
 ```
-Before new pixel is drawn, it's depth is compared to the pixel already drawn on that location.
-If it passes according to the check in the first argument of this block, it gets drawn. If it fails, the new pixel gets discarded, and whatever was there remains.
-The second argument controls when check passes whether only color should be updated or both color and depth value. Turning this off can be useful for drawing transparent things, which should react to already drawn opaque things, while not modifying depth to not interfer with each other.
-**Depth test and write are values that are saved separately for each render target.**
-Despite all 6 sides of the cube texture being different render targets, they still share those values.
+在新像素被绘制之前，它的深度会与已绘制在该位置上的像素进行比较。
+如果它根据此积木块第一个参数中的检查通过，则被绘制。如果失败，新像素被丢弃，原来在那里的内容保持不变。
+第二个参数控制当检查通过时，是只更新颜色还是同时更新颜色和深度值。将其关闭对于绘制透明物体很有用，这些物体应对已绘制的不透明物体做出反应，同时不修改深度以免相互干扰。
+**深度测试和写入是为每个渲染目标单独保存的值。**
+尽管立方体纹理的全部 6 个面是不同的渲染目标，但它们仍然共享这些值。
 
-For stage, default values are "closer" and "on". **However, for textures used as render targets, default values are "everything" and "off".** Memory for storing depth is not even allocated until depth write is set to "on".
+对于舞台，默认值为"更近"和"开"。**但是，对于用作渲染目标的纹理，默认值为"全部"和"关"。** 在深度写入设置为"开"之前，甚至不会分配用于存储深度的内存。
 
 
-### Meshes <a name="blocks-meshes"></a>
+### 网格 <a name="blocks-meshes"></a>
 ```scratch
-(all meshes :: sensing)
+(所有网格 :: sensing)
 ```
-Lists all the mesh names separated by commas. Mainly meant to be used manually for debugging purposes.
+列出所有网格名称，用逗号分隔。主要用于手动调试目的。
 
 ---
 ```scratch
-create mesh [my mesh] :: sensing
+创建网格 [my mesh] :: sensing
 ```
-Creates an empty mesh with the specified name. If a mesh with such name already exists, it gets replaced.
+创建一个具有指定名称的空网格。如果已存在同名网格，它将被替换。
 
-Whitespaces at both ends of the name and any commas are removed for compatibility with the “make mesh inherit” block.
+名称两端的空白字符和任何逗号都会被移除以兼容"使网格继承"积木块。
 
 ---
 ```scratch
-delete mesh [my mesh] :: sensing
+删除网格 [my mesh] :: sensing
 ```
-Deletes mesh with the specified name.
+删除具有指定名称的网格。
 
 ---
 ```scratch
-make mesh [my mesh 3] inherit from meshes [my mesh 1,my mesh 2] :: sensing
+使 [my mesh 3] 继承自网格 [my mesh 1,my mesh 2] :: sensing
 ```
-Sets up the first mesh to inherit any lists or properties from multiple other meshes. 
-If multiple other meshes have the same property, the last one takes the priority.
-If any of the specified meshes to inherit form a cyclic dependancy, the entire operation fails.
-Names are provided in a comma-separated list. Mesh names are trimmed from spaces on both ends. So `my mesh 1,my mesh 2`, `my mesh 1, my mesh 2`, and `    my mesh 1    ,   my mesh 2   ` will all behave the same.
+设置第一个网格从多个其他网格继承任何列表或属性。
+如果多个其他网格具有相同的属性，最后一个优先。
+如果任何指定的要继承的网格形成循环依赖，整个操作将失败。
+名称以逗号分隔列表提供。网格名称两端会被去除空格。因此 `my mesh 1,my mesh 2`、`my mesh 1, my mesh 2` 和 `    my mesh 1    ,   my mesh 2   ` 的行为都相同。
 
-This is a key feature meant to avoid data duplication. When using it, nothing that could be expensive is duplicated.
-**Use this instead of uploading the same lists or textures into multiple different meshes.**
-You can even rapidly change what meshes are inherited while the project is running.
+这是一个关键特性，旨在避免数据重复。使用它时，任何可能昂贵的内容都不会被复制。
+**使用它而不是将相同的列表或纹理上传到多个不同的网格。**
+你甚至可以在项目运行时快速更改继承的网格。
 
 ---
 ```scratch
-(mesh [my mesh] [inherits from v] :: sensing)
+(网格 [my mesh] [继承自 v] :: sensing)
 ```
-Used to obtain properties of a mesh.
+用于获取网格的属性。
 
 ---
 ```scratch
-set [my mesh] vertex indices [list v] :: sensing
+设置 [my mesh] 顶点索引 [list v] :: sensing
 ```
-An optional mesh list used to provide the order in which vertices are read and used to construct primitives.
-Starts from 1. Specifying value 0 or below can be used to break up "triangle strip", "triangle fan", "line strip" and "line loop" into multiple ones.
+一个可选的网格列表，用于提供读取顶点并用于构造图元的顺序。
+从 1 开始。指定值 0 或以下可用于将"三角形带"、"三角形扇"、"线带"和"线环"分解为多个。
 
 ---
 ```scratch
-set [my mesh] positions XY [listX v] [listY v] :: sensing
-set [my mesh] positions XYZ [listX v] [listY v] [listZ v] :: sensing
+设置 [my mesh] 位置 XY [listX v] [listY v] :: sensing
+设置 [my mesh] 位置 XYZ [listX v] [listY v] [listZ v] :: sensing
 ```
-Used to upload vertex positions into the mesh.
-**The only mandatory list for a mesh to become drawable.**
+用于将顶点位置上传到网格。
+**网格变得可绘制唯一必需的列表。**
 
 ---
 ```scratch
-set [my mesh] colors RGB [listR v] [listG v] [listB v] :: sensing
-set [my mesh] colors RGBA [listR v] [listG v] [listB v] [listA v] :: sensing
+设置 [my mesh] 颜色 RGB [listR v] [listG v] [listB v] :: sensing
+设置 [my mesh] 颜色 RGBA [listR v] [listG v] [listB v] [listA v] :: sensing
 ```
-Used to upload vertex colors (as red, green, blue and alpha) into the mesh.
-Values mush be integers in range between 0 and 255.
+用于将顶点颜色（作为红、绿、蓝和 alpha）上传到网格。
+值必须是 0 到 255 范围内的整数。
 
 ---
 ```scratch
-set [my mesh] texture coordinates UV [listU v] [listV v] :: sensing
-set [my mesh] texture coordinates UVW [listU v] [listV v] [listW v] :: sensing
+设置 [my mesh] 纹理坐标 UV [listU v] [listV v] :: sensing
+设置 [my mesh] 纹理坐标 UVW [listU v] [listV v] [listW v] :: sensing
 ```
-Used to upload texture coordinates into the mesh.
-The block with 2 components is used for 2D textures. Specifies 2D coordinates on a texture, which go from 0 to 1. But values outside of those bounds are also valid and useful.
-The block with 3 components is used for cube textures (cubemaps). Specifies 3D direction from the center, which will be intersected with the cube around it.
-If texture coordinates are specified, but a texture is not, the default texture is used.
+用于将纹理坐标上传到网格。
+具有 2 个分量的积木块用于 2D 纹理。指定纹理上的 2D 坐标，范围从 0 到 1。但超出这些范围的值也是有效且有用的。
+具有 3 个分量的积木块用于立方体纹理（cubemap）。指定从中心出发的 3D 方向，该方向将与围绕它的立方体相交。
+如果指定了纹理坐标但没有纹理，则使用默认纹理。
 
 ---
 ```scratch
-set [my mesh] texture () [clamp to edge v] [pixelated v] :: sensing
-set [my mesh] cube texture (X+ v) () [clamp to edge v] [pixelated v] :: sensing
+设置 [my mesh] 纹理 () [钳制到边缘 v] [像素化 v] :: sensing
+设置 [my mesh] 立方体纹理 (X+ v) () [钳制到边缘 v] [像素化 v] :: sensing
 ```
-Used to upload a texture into the mesh.
-Depending on the type of texture used, calling the block will either upload the texture instantly (e.g. empty or text) or schedules the texture to be uploaded into the mesh some time in the future (e.g. load from url or from costume).
-**So if for example you upload a texture from a costume and immediately try to draw this mesh once, you will not see it. It will take some time to load!**
+用于将纹理上传到网格。
+根据使用的纹理类型，调用此积木块要么立即上传纹理（例如 empty 或 text），要么安排纹理在未来的某个时间上传到网格（例如从 url 或从造型加载）。
+**因此，例如，如果你从造型上传纹理并立即尝试绘制此网格一次，你将看不到它。加载需要一些时间！**
 
-Use the block below to check if the texture has finished loading.
+使用下面的积木块检查纹理是否已完成加载。
 ```scratch
-(mesh [my mesh] [texture is loading v] :: sensing)
+(网格 [my mesh] [纹理加载中 v] :: sensing)
 ```
 
-The 2nd(3rd) argument controls what happens when UV coordinates are out of 0..1 range:
- - `clamp to edge` - will find the closest point within allowed range and use color of that. This basically infinitely stretches edges of the texture.
- - `repeat` - the texture is repeated out of bounds. UV 1.5 0.6 is the same as 13.5 -0.4
+第 2（3）个参数控制当 UV 坐标超出 0..1 范围时会发生什么：
+ - `钳制到边缘` - 将找到允许范围内最近的点并使用其颜色。这基本上无限拉伸纹理的边缘。
+ - `重复` - 纹理在超出范围时重复。UV 1.5 0.6 与 13.5 -0.4 相同
 
-The 3rd(4th) argument controls how each pixel obtains the color from the texture:
- - `pixelated` - rounds down UV to the coordinates the closest pixel and gets it's color
- - `blurred` - takes a weighted average between 4 pixels UV falls inbetween
+第 3（4）个参数控制每个像素如何从纹理获取颜色：
+ - `像素化` - 将 UV 向下舍入到最近像素的坐标并获取其颜色
+ - `模糊` - 在 UV 落入的 4 个像素之间取加权平均值
 
-The 1st argument in cube texture controls to which of 6 sides the texture should be uploaded. It must be square and the same size as all other sides.
-Uploading non-matching size will cause all other sides to clear themselves.
-Uploading non-square size texture will fail and do nothing.
+立方体纹理中的第 1 个参数控制纹理应上传到 6 个面中的哪一个。它必须是正方形，且与其他所有面大小相同。
+上传不匹配的大小将导致所有其他面清除自身。
+上传非正方形大小的纹理将失败且不执行任何操作。
 
-The type of texture that the mesh will have can only be set once. If the mesh has cube texture, trying to replace it with the 2D texture will fail. If the mesh has 2D texture, trying to replace it with the cube texture will also fail.
+网格将拥有的纹理类型只能设置一次。如果网格有立方体纹理，尝试用 2D 纹理替换将失败。如果网格有 2D 纹理，尝试用立方体纹理替换也将失败。
 
 ---
 ```scratch
-set [my mesh] texture mipmapping [off v] :: sensing
+设置 [my mesh] 纹理 Mip 映射 [关 v] :: sensing
 ```
-Used for enabling and disabling mipmapping.
-When enabling, regenerates mipmaps.
-When mipmapping is enabled, uploading textures regenerates mipmaps as well.
+用于启用和禁用 mipmapping。
+启用时，重新生成 mipmap。
+当启用 mipmapping 时，上传纹理也会重新生成 mipmap。
 
-Mipmapping is a technique of having texture in multiple different resolutions (mipmaps) and whenever something is either far away or viewed at a steep angle, switching to using lower resolution version of the textures.
-It help eliminate pixel shimmering and with high resolutions, can also improve performance (low resolution versions of textures can fit in GPU cache, allowing far away geometry to be drawn very quickly).
+Mipmapping 是一种让纹理具有多种不同分辨率（mipmap）的技术，当物体距离较远或以陡峭角度观看时，切换到使用较低分辨率的纹理版本。
+它有助于消除像素闪烁，在高分辨率下还可以提高性能（低分辨率版本的纹理可以放入 GPU 缓存，使远处的几何体能够非常快速地绘制）。
 
-Default for mesh is "off".
+网格默认为"关"。
 
 ---
 ```scratch
-set [my mesh] texture anisotropic filtering (16 v) :: sensing
+设置 [my mesh] 纹理各向异性过滤 (16 v) :: sensing
 ```
-Used for setting anisotropic filtering.
-1 is no anisotropic filtering.
-16 is maximum.
-**It is not supported on all GPUs! Maximum value also varies depending on GPU.**
-Always setting it to 16, regardless of whether it is supported or what values are supported is still totally fine. Performance on underpowered devices that support it will no be fine though. So adding a toggle is a good idea.
+用于设置各向异性过滤。
+1 表示不进行各向异性过滤。
+16 是最大值。
+**并非所有 GPU 都支持！最大值也因 GPU 而异。**
+始终将其设置为 16，无论是否支持或支持哪些值，仍然完全没问题。不过在支持它的低性能设备上性能会受到影响。因此添加一个开关是个好主意。
 
-Default for mesh 1.
+网格默认为 1。
 
 ---
 ```scratch
-set [my mesh] bone indices [listIndices v] weights [listWeights v] count per vertex (3) :: sensing
+设置 [my mesh] 骨骼索引 [listIndices v] 权重 [listWeights v] 每顶点数量 (3) :: sensing
 ```
-Used for setting bone indices and weights.
-Count per vertex must be in range between 1 and 4.
-Indices start from 1.
-Weights are not used when count per vertex is 1.
-Length of supplied indices and weights lists have to match and be divisible by "count per vertex".
+用于设置骨骼索引和权重。
+每个顶点的数量必须在 1 到 4 之间。
+索引从 1 开始。
+当每个顶点的数量为 1 时，不使用权重。
+提供的索引和权重列表的长度必须匹配，并且能被"每个顶点的数量"整除。
 
 ---
 ```scratch
-set [my mesh] [original v] transforms [listTransforms v] :: sensing
-set [my mesh] [current v] transforms [listTransforms v] :: sensing
+设置 [my mesh] [原始 v] 变换 [listTransforms v] :: sensing
+设置 [my mesh] [当前 v] 变换 [listTransforms v] :: sensing
 ```
-Used for setting original and current transforms of each bone.
-Transforms on how to get from original to current will be calculated and applied to vertices based on their bone indices and weights.
-Supplied list of transforms must have length divisible by 16. If not, operation fails.
-Setting original transforms is optional. Missing original transforms are treated as empty transforms.
+用于设置每个骨骼的原始和当前变换。
+将计算从原始到当前的变换，并根据顶点的骨骼索引和权重应用于顶点。
+提供的变换列表长度必须能被 16 整除。如果不能，操作失败。
+设置原始变换是可选的。缺少的原始变换被视为空变换。
 
 ---
 ```scratch
-set [my mesh] interleaved [XY positions v] [list v] :: sensing
+设置 [my mesh] 交错 [XY 位置 v] [list v] :: sensing
 ```
 
-Used for setting vertex data. Does the same as those blocks:
+用于设置顶点数据。与以下积木块作用相同：
 ```scratch
-set [my mesh] positions XY [listX v] [listY v] :: sensing
-set [my mesh] positions XYZ [listX v] [listY v] [listZ v] :: sensing
-set [my mesh] colors RGB [listR v] [listG v] [listB v] :: sensing
-set [my mesh] colors RGBA [listR v] [listG v] [listB v] [listA v] :: sensing
-set [my mesh] texture coordinates UV [listU v] [listV v] :: sensing
-set [my mesh] texture coordinates UVW [listU v] [listV v] [listW v] :: sensing
+设置 [my mesh] 位置 XY [listX v] [listY v] :: sensing
+设置 [my mesh] 位置 XYZ [listX v] [listY v] [listZ v] :: sensing
+设置 [my mesh] 颜色 RGB [listR v] [listG v] [listB v] :: sensing
+设置 [my mesh] 颜色 RGBA [listR v] [listG v] [listB v] [listA v] :: sensing
+设置 [my mesh] 纹理坐标 UV [listU v] [listV v] :: sensing
+设置 [my mesh] 纹理坐标 UVW [listU v] [listV v] [listW v] :: sensing
 ```
-but from a single list with all the components interleaved.
+但是从单个列表中以交错方式包含所有分量。
 
 ---
 ```scratch
-set [my mesh] instance [transfroms v] [list v] :: sensing
+设置 [my mesh] 实例 [变换 v] [list v] :: sensing
 ```
-Used for setting data for instancing: drawing the same mesh many times (can be over a million) in multiple locations.
+用于设置实例化数据：在多个位置绘制同一网格多次（可以超过一百万次）。
 
-Only one in each of the following 3 catergories is allowed. Setting another one replaces the old one.
+以下 3 个类别中每个类别只允许一个。设置另一个会替换旧的。
 
-Positioning:
- - `transforms` - a list of transforms, with total length divisible by 16.
- - `XY positions` - a list of interleaved X and Y positions, with total length divisible by 2.
- - `XYZ positions` - a list of interleaved X, Y and Z positions, with total length divisible by 3.
- - `XYZ positions and sizes` - a list of interleaved X, Y, Z positions and sizes, with total length divisible by 4.
+定位：
+ - `变换` - 变换列表，总长度能被 16 整除。
+ - `XY 位置` - 交错的 X 和 Y 位置列表，总长度能被 2 整除。
+ - `XYZ 位置` - 交错的 X、Y 和 Z 位置列表，总长度能被 3 整除。
+ - `XYZ 位置和大小` - 交错的 X、Y、Z 位置和大小列表，总长度能被 4 整除。
 
-Colors:
- - `RGB colors` - a list of interleaved red, green and blue color components, with total length divisible by 3.
- - `RGBA colors` - a list of interleaved red, green, blue and alpha color components, with total length divisible by 4.
+颜色：
+ - `RGB 颜色` - 交错的红、绿、蓝颜色分量列表，总长度能被 3 整除。
+ - `RGBA 颜色` - 交错的红、绿、蓝、alpha 颜色分量列表，总长度能被 4 整除。
 
-Texture coordinates:
- - `UV offsets` - a list of interleaved U and V texture coordinate offsets, with total length divisible by 2.
- - `UV offsets and sizes` - a list of interleaved U, V texture coordinate offsets and U, V texture coordinate scaling factors, with total length divisible by 4.
+纹理坐标：
+ - `UV 偏移` - 交错的 U 和 V 纹理坐标偏移列表，总长度能被 2 整除。
+ - `UV 偏移和大小` - 交错的 U、V 纹理坐标偏移和 U、V 纹理坐标缩放因子列表，总长度能被 4 整除。
 
-Setting positioning is required for instancing to activate.
+实例化需要设置定位才能激活。
 
-All defined catergories have to have data for the same amount of instances. If the amount of instances inferred from the length of those lists do not match, mesh is not valid for drawing and cannot be drawn.
+所有已定义的类别必须具有相同数量实例的数据。如果从这些列表的长度推断出的实例数量不匹配，则网格无效，无法绘制。
 
 ---
 ```scratch
-set [my mesh] list update offset (1) :: sensing
+设置 [my mesh] 列表更新偏移 (1) :: sensing
 ```
-Allows partially updating mesh data instead of fully reuploading.
+允许部分更新网格数据而不是完全重新上传。
 
-Starts from 1.
-Having it set to 1 or above enables partial update mode.
-Having it set to 0 or below disables partial update mode and makes lists update fully.
-In partial update mode you can only update existing data. If your new data is too long and goes out of bounds of what is already set for the mesh, the operation will fail.
-**If you accidentally enabled it and want to disable it, set it to 0, not 1!**
-That is because while both update list from the start, when you have it at 1, partial update mode is enabled and you cannot resize the data. If you try to upload more it will fail. If you try to upload less, the end will remain unchanged.
+从 1 开始。
+将其设置为 1 或以上启用部分更新模式。
+将其设置为 0 或以下禁用部分更新模式，使列表完全更新。
+在部分更新模式下，你只能更新现有数据。如果你的新数据太长，超出了网格已设置的范围，操作将失败。
+**如果你不小心启用了它并想禁用它，请将其设置为 0，而不是 1！**
+这是因为虽然两者都从开头更新列表，但当它设置为 1 时，部分更新模式已启用，你无法调整数据大小。如果你尝试上传更多，它将失败。如果你尝试上传更少，末尾将保持不变。
 
-**This is one of 2 properties that is not inherited.** This is done for performance reasons and to reduce chances of misuse.
+**这是 2 个不被继承的属性之一。** 这出于性能原因和减少误用机会。
 
-**If you need to update data fully, do not use partial update mode at offset 1 to "save memory". It only makes things worse.** Only use it when you need to update only relatively a small section of data.
+**如果你需要完全更新数据，不要使用偏移 1 的部分更新模式来"节省内存"。它只会让事情变得更糟。** 仅当你需要只更新相对较小部分的数据时才使用它。
 
-Default for mesh is 0.
+网格默认为 0。
 
 ---
 ```scratch
-set [my mesh] optimize next uploaded lists for being [rarely v] updated :: sensing
+设置 [my mesh] 优化下次上传列表为 [很少 v] 更新 :: sensing
 ```
-Used for hinting GPU driver on how the data should be prepared. Different GPU drivers will handle it differently.
+用于向 GPU 驱动程序提示数据应如何准备。不同的 GPU 驱动程序会以不同方式处理。
 
-Usually you create mesh, set static data once, then toggle this to one of the frequent modes and start updating some that frequent data.
-If you suddenly need to update static data again, do not forget to temporarily switch it to "rarely", before setting that data.
+通常你创建网格，设置静态数据一次，然后将此切换为频繁模式之一，并开始更新一些频繁数据。
+如果你突然需要再次更新静态数据，别忘了在设置该数据之前临时将其切换为"很少"。
 
-This only affects vertex related data. It does not affect uploading texture pixel data from a list.
+这仅影响与顶点相关的数据。它不影响从列表上传纹理像素数据。
 
-**This is one of 2 properties that is not inherited.** This is done for performance reasons and to reduce chances of misuse.
+**这是 2 个不被继承的属性之一。** 这出于性能原因和减少误用机会。
 
-Default for mesh is "rarely".
+网格默认为"很少"。
 
 ---
 ```scratch
-set [my mesh] from [obj mtl v] [list v] :: sensing
-set [my mesh] from [off v] [list v] :: sensing
+从 [obj mtl v] [list v] 设置 [my mesh] :: sensing
+从 [off v] [list v] 设置 [my mesh] :: sensing
 ```
-Decodes a 3D model file and uploads it into a mesh. Block continues instantly, but the model loading is performed in a separate thread, and it finishes with a delay. Currently, only one thread is used, so everything is queued and processed one by one. In the future, multiple threads might be used.
+解码 3D 模型文件并将其上传到网格。积木块立即继续，但模型加载在单独的线程中执行，并会延迟完成。目前只使用一个线程，因此所有内容排队并逐个处理。将来可能会使用多个线程。
 
 > [!IMPORTANT]
-> This block is designed as a more of a shortcut for quick testing, rather than the main way of loading 3D models. For anything more complex, make your own 3D model parser.
+> 此积木块设计为更多是用于快速测试的快捷方式，而不是加载 3D 模型的主要方式。对于任何更复杂的情况，请制作自己的 3D 模型解析器。
 
-File formats:
- - [obj](https://en.wikipedia.org/wiki/Wavefront_.obj_file) is a very common and well known 3D model file format. It supports UV texture coordinates, materials with colors and textures. However it does not have a standardized way to do vertex colors. This block implements a non-standard but widely supported way to represent vertex colors as 4th - 7th elements of `v`. The OBJ and MTL specification describes a lot of features, only some of which are currently (or even can be) supported by this importer. In particular, there is currently no way to import models which use multiple textures, as this extension only supports 1 texture per mesh. Normals and anything lighting related isn't and can't be supported. **In case both OBJ and MTL files need to be imported, combine them all into 1 list sequentially: first all of the MTL files, and then the OBJ file.**
- - [off](https://en.wikipedia.org/wiki/OFF_(file_format)) is not that well known, but a very simple file format. Is is quite neat for use in Scratch in general, as it's simpler than OBJ. Unlike it, natively supports both vertex and face colors. It does not support textures or texture coordinates. You can read more about it and find a lot of example models [here](http://web.archive.org/web/20230331211230/https://people.sc.fsu.edu/~jburkardt/data/off/off.html). Since the format is so simple, this importer supports all features of it.
-Imported model is affected by transformation set with:
+文件格式：
+ - [obj](https://en.wikipedia.org/wiki/Wavefront_.obj_file) 是一种非常常见且知名的 3D 模型文件格式。它支持 UV 纹理坐标、带颜色和纹理的材质。但是它没有标准化的方式来做顶点颜色。此积木块实现了一种非标准但广泛支持的方式，将顶点颜色表示为 `v` 的第 4 - 7 个元素。OBJ 和 MTL 规范描述了许多特性，其中只有一些目前（甚至可能）受此导入器支持。特别是，目前无法导入使用多个纹理的模型，因为此扩展每个网格只支持 1 个纹理。法线和任何与光照相关的内容都不支持，也无法支持。**如果需要同时导入 OBJ 和 MTL 文件，请将它们全部按顺序合并到 1 个列表中：首先是所有 MTL 文件，然后是 OBJ 文件。**
+ - [off](https://en.wikipedia.org/wiki/OFF_(file_format)) 不是很有名，但格式非常简单。它非常适合在 Scratch 中使用，因为它比 OBJ 更简单。与它不同，原生支持顶点颜色和面颜色。它不支持纹理或纹理坐标。你可以[在此处](http://web.archive.org/web/20230331211230/https://people.sc.fsu.edu/~jburkardt/data/off/off.html)阅读更多关于它的信息并找到许多示例模型。由于格式如此简单，此导入器支持它的所有特性。
+导入的模型受以下设置的变换影响：
 ```scratch
-configure [importing from file v] transformation :: sensing
+配置 [从文件导入 v] 变换 :: sensing
 ```
 
 ---
 ```scratch
-set [my mesh] primitives (points v) :: sensing
+设置 [my mesh] 图元 [点 v] :: sensing
 ```
-Used for changing the way vertices are assembled into primitives.
-- With triangles, vertices are grouped by 3 into triangles.
-- With triangle strip, the first 2 vertices are processed without anything, and then each subsequent vertex get combined with the previous 2 into a triangle.
-- With triangle fan, the first 2 vertices are processed without anything, and then each subsequent vertex get combined with the previous one and the first one into a triangle.
-- With lines, vertices are grounded by 2 into lines.
-- With line strip, the first vertiex is processed without anything, and then each subsequent vertex get combined with the previous one into a line.
-- With line loop, the first vertiex is processed without anything, and then each subsequent vertex get combined with the previous one into a line and the last one gets also linked back to the first one.
-- With points, each vertex turns into a point.
+用于更改顶点组装成图元的方式。
+- 使用三角形时，顶点按 3 个一组组成三角形。
+- 使用三角形带时，前 2 个顶点不进行任何处理，然后每个后续顶点与前 2 个顶点组合成一个三角形。
+- 使用三角形扇时，前 2 个顶点不进行任何处理，然后每个后续顶点与前一个顶点和第一个顶点组合成一个三角形。
+- 使用线时，顶点按 2 个一组组成线。
+- 使用线带时，第一个顶点不进行任何处理，然后每个后续顶点与前一个顶点组合成一条线。
+- 使用线环时，第一个顶点不进行任何处理，然后每个后续顶点与前一个顶点组合成一条线，最后一个还会链接回第一个。
+- 使用点时，每个顶点变成一个点。
 
-When using vertex indices, specifying vertex index 0 or below can be used to break up "triangle strip", "triangle fan", "line strip" and "line loop" into multiple ones.
+使用顶点索引时，指定顶点索引 0 或以下可用于将"三角形带"、"三角形扇"、"线带"和"线环"分解为多个。
 
-Default for mesh is "triangles".
+网格默认为"三角形"。
 
 ---
 ```scratch
-set [my mesh] primitive size (1) :: sensing
+设置 [my mesh] 图元大小 (1) :: sensing
 ```
-When using point primitives, changes point size.
-When using lines, line strip or line loop primitives, changes line width.
+使用点图元时，更改点大小。
+使用线、线带或线环图元时，更改线宽。
 
 > [!WARNING]  
-> This feature shouldn't be relied on, as the minimum and maximum supported values vary depending on the GPU. Many GPUs don't support values above 1.  
-> You can view information about your GPU at https://webglreport.com/.  
+> 此功能不应依赖，因为支持的最小值和最大值因 GPU 而异。许多 GPU 不支持大于 1 的值。  
+> 你可以在 https://webglreport.com/ 查看关于你的 GPU 的信息。  
 
-Default for mesh is 1.
-
----
-```scratch
-set [my mesh] blending (default v) :: sensing
-```
-
-Used for setting how mesh will be blender with what is already drawn.
-
-If your mesh is fully opaque, use "overwrite color (fastest for opaque)". If your mesh is transpartent instead, you can use it to draw transparent holes in an already opaque image.
-Use invisible for drawing to the depth buffer.
-Everything else is self-explanatory and the same as in [Clipping &amp; Blending](https://extensions.turbowarp.org/Xeltalliv/clippingblending.js) extension.
-
-Default for mesh is "default".
+网格默认为 1。
 
 ---
 ```scratch
-set [my mesh] cull (back faces v) :: sensing
+设置 [my mesh] 混合模式 [默认 v] :: sensing
 ```
-Used for enabling/disabling backface/frontface culling. Basically making triangle visible only from one side, depening of whether their vertices appear on the screen in the clockwise or counter-clockwise order.
 
-Deafult for mesh is "nothing".
+用于设置网格将如何与已绘制的内容混合。
+
+如果你的网格完全不透明，请使用"覆盖颜色（不透明最快）"。如果你的网格是透明的，你可以使用它在已不透明的图像中绘制透明孔洞。
+使用不可见绘制到深度缓冲区。
+其他所有选项都是不言自明的，与 [Clipping & Blending](https://extensions.turbowarp.org/Xeltalliv/clippingblending.js) 扩展中相同。
+
+网格默认为"默认"。
 
 ---
 ```scratch
-set [my mesh] discard pixels less opaque than (0.5), and for those that pass [make opaque v] :: sensing
+设置 [my mesh] 剔除 [背面 v] :: sensing
 ```
+用于启用/禁用背面/正面剔除。基本上使三角形仅从一侧可见，具体取决于它们的顶点在屏幕上出现的顺序是顺时针还是逆时针。
 
-Used for disacrding pixels that are below specific opacity threshold and optionally making everything opaque.
-
-Useful for drawing text or textures of leaves, where the texture itself should be either fully opaque or fully transparent, with texture alpha being used for determining where the sharp cutoff edges should be.
-
-Default for mesh is threshold:0 preserve opacity.
+网格默认为"无"。
 
 ---
 ```scratch
-set [my mesh] billboarding (on v) :: sensing
+设置 [my mesh] 丢弃不透明度低于 (0.5) 的像素，通过的像素 [设为不透明 v] :: sensing
 ```
-Used for enabling and disabling billboarding.
-When billboarding is enabled, the mesh is always facing in the opposite direction to your look direction (behind you).
-Note that it is not the same as turning towards your position.
 
-Default for mesh is "off".
+用于丢弃低于特定不透明度阈值的像素，并可选择使所有内容不透明。
+
+对于绘制文本或树叶纹理很有用，其中纹理本身应该是完全不透明或完全透明，纹理 alpha 用于确定清晰的截止边缘应该在哪里。
+
+网格默认为阈值:0 保持不透明度。
 
 ---
 ```scratch
-set [my mesh] accurate interpolation (on v) :: sensing
+设置 [my mesh] 公告板 [开 v] :: sensing
 ```
-(DEPRECTATED)
-Used for enabling a more accurate interpolation method which doesn't have issues of texture coordinates extrapolating outside of the specified range on the triangle edges, causing unpleasant looking seams. It is more computationally expensive and should only be used when that is an issue.
-Enabling mipmapping and/or anisatropic filtering may prevent it from working and reintroduce seams.
+用于启用和禁用公告板。
+当启用公告板时，网格始终面向与你的观察方向相反的方向（在你身后）。
+注意这与转向你的位置不同。
 
-Default for mesh is "off".
+网格默认为"关"。
 
 ---
 ```scratch
-set [my mesh] compute color (once at pixel center v) :: sensing
+设置 [my mesh] 精确插值 [开 v] :: sensing
 ```
-Replaces the deprectated "accurate interpolation" block.
+（已弃用）
+用于启用更准确的插值方法，该方法没有纹理坐标在三角形边缘上外推到指定范围之外的问题，从而避免难看的接缝。它计算成本更高，仅当这是一个问题时才应使用。
+启用 mipmapping 和/或各向异性过滤可能会阻止其工作并重新引入接缝。
 
-Changes how color of each pixel is computed when MSAA antialiasing is enabled.
-
-Sometimes it can be beneficial for visulas to make edges of rendered 3D graphics smoothed out instead of having sharply transitioning pixel colors. That is the problem that different antialiasing techniques are trying to slove. For now, in Simple3D extension MSAA antialiasing is always enabled for the main Simple3D layer, and always disabled when rendering to textures.
-
-The simplest way to do antialiasing is called [Supersampling](https://en.wikipedia.org/wiki/Supersampling) and consists of rendering the image at higher resoultion then what is needed and then downscaling it to lower resolution by averageing colors. It works, but it is quite slow.
-
-A cheaper alternative to supersampling is a technique known as [Multi-sample Antialiasing (MSAA)](https://en.wikipedia.org/wiki/Multisample_anti-aliasing). It still consists of rendering the image at higher resolution by giving each pixel multiple sub-pixels, however, the color for all the sub-pixels of a pixel is only computed once, usually based on position in the center of the pixel. At the end, the colors of all of the sub-pixels get averaged and the result is a rendered image with smooth edges. Sub-pixels are often referred as samples.
-
-Unlike supersampling, MSAA only smoothes out primitive edges and not the sharp pixelated transitions on the primitive itself (e.g. textures).
-
-- `once at pixel center`
-
-  This is a typical MSAA as described above.
-
-  It has an issue where if some of the samples on the edge of a pixel fall within the drawn primitive, but the center of a pixel doesn't, then the color will still be computed for the center of the pixel, causing passed in UV coordinates and vertex colors to be extrapolated beyond the specified range. It often results in visible texture seams casued by adjacent texture data bleeding into pixels that shouldn't have it or incorrect colors on edges.
-
-  Though, for most use cases this option is good enough with issue not being noticable. Since this is computationally the cheapest option, it is default.
-- `once at midpoint of covered samples`
-
-  This solves the issue described above by still computing color once, but instead of always doing it in the center of the pixel, which may not always fall within the primitive, it does it at the midpoint of all the samples that passed the inside-of-primitive check. Since all primitives are convex, this midpoint is also guaranteed to be within the primitive. This option is more computationally expensive, and as such, disabled by default.
-
-- `separately for each sample`
-
-  Computes color separately at each sample, turning this into Supersampling. This option relies on OES_shader_multisample_interpolation and as such isn't supported everywhere. It is also the most computationally expensive option.
-
-Note that enabling mipmapping and/or anisatropic filtering may reintroduce seams regardless of what was selected with this block.
-
-Using `separately for each sample` with fallback to `once at midpoint of covered samples` can be implemented by calling the block twice. Selecting `separately for each sample` when it isn't supported will do nothing and keep the previous value.
-
-Default for mesh is "once at pixel center".
+网格默认为"关"。
 
 ---
 ```scratch
-set [my mesh] vertex draw range from (1) to (6) :: sensing
+设置 [my mesh] 计算颜色 [在像素中心一次 v] :: sensing
 ```
-Used for drawing mesh partially by only drawing some range of the vertices.
+替代已弃用的"精确插值"积木块。
 
-Could be useful in cases where the mesh keeps changing (including amount of vertices and primitives).
-For cases like that, prepare a lot of dummy vertex data in advance. Then only fill and start drawing the beginning of it.
-Use partial updates to add any extra polygons after the range that is being drawn and then extend the range to include them.
-To remove polygons, move the ones from the end of the drawing range to location of the remove one and then shring the drawing
-range at the end.
+更改启用 MSAA 抗锯齿时每个像素颜色的计算方式。
 
-Default for mesh is not set. Once set, cannot be undone.
+有时让渲染的 3D 图形边缘平滑而不是像素颜色急剧过渡对视觉效果有益。这就是不同的抗锯齿技术试图解决的问题。目前，在 Simple3D 扩展中，MSAA 抗锯齿始终为主 Simple3D 层启用，渲染到纹理时始终禁用。
+
+最简单的抗锯齿方法称为[超采样](https://en.wikipedia.org/wiki/Supersampling)，包括以高于所需的分辨率渲染图像，然后通过平均颜色将其缩小到较低分辨率。它有效，但相当慢。
+
+超采样的更便宜的替代方案是一种称为[多重采样抗锯齿 (MSAA)](https://en.wikipedia.org/wiki/Multisample_anti-aliasing) 的技术。它仍然包括通过给每个像素多个子像素来以更高分辨率渲染图像，但是，所有子像素的颜色只计算一次，通常基于像素中心的位置。最后，所有子像素的颜色被平均，结果是边缘平滑的渲染图像。子像素通常被称为样本。
+
+与超采样不同，MSAA 只平滑图元边缘，而不平滑图元本身上的尖锐像素化过渡（例如纹理）。
+
+- `在像素中心一次`
+
+  这是上面描述的典型 MSAA。
+
+  它有一个问题，如果像素边缘上的一些样本落在绘制的图元内，但像素中心没有，那么颜色仍将在像素中心计算，导致传入的 UV 坐标和顶点颜色被外推到指定范围之外。它通常会导致可见的纹理接缝，由相邻纹理数据渗入不应有的像素或边缘上的不正确颜色引起。
+
+  不过，对于大多数用例，此选项已经足够好，问题不明显。由于这是计算成本最低的选项，它是默认值。
+- `在覆盖样本中点一次`
+
+  这通过仍然只计算一次颜色来解决上述问题，但不是总是在像素中心进行，像素中心可能并不总是落在图元内，而是在所有通过图元内部检查的样本的中点进行。由于所有图元都是凸的，这个中点也保证在图元内。此选项计算成本更高，因此默认禁用。
+
+- `为每个样本单独`
+
+  在每个样本处单独计算颜色，将其变为超采样。此选项依赖于 OES_shader_multisample_interpolation，因此并非在所有地方都支持。它也是计算成本最高的选项。
+
+注意，启用 mipmapping 和/或各向异性过滤可能会重新引入接缝，无论使用此积木块选择了什么。
+
+使用 `为每个样本单独` 并回退到 `在覆盖样本中点一次` 可以通过调用积木块两次来实现。在不支持时选择 `为每个样本单独` 将不执行任何操作并保留先前的值。
+
+网格默认为"在像素中心一次"。
 
 ---
 ```scratch
-set [my mesh] vertex draw ranges from [starts list v] to [ends list v] :: sensing
+设置 [my mesh] 顶点绘制范围从 (1) 到 (6) :: sensing
 ```
-Same as the `vertex draw range` block, but for multiple ranges at once.
+用于通过仅绘制部分顶点范围来部分绘制网格。
 
-Useful for implementing culling, as it allows toggling visibility of different parts of the mesh, without the cost of doing multiple draw calls.
+在网格不断变化（包括顶点和图元数量）的情况下可能很有用。
+对于这种情况，提前准备大量虚拟顶点数据。然后只填充并开始绘制其开头部分。
+使用部分更新在正在绘制的范围之后添加任何额外多边形，然后扩展范围以包括它们。
+要删除多边形，将要删除的位置上的多边形从绘制范围的末尾移动到该位置，然后在末尾收缩绘制范围。
+
+网格默认为未设置。一旦设置，无法撤销。
 
 ---
 ```scratch
-set [my mesh] instance draw limit (10) :: sensing
+设置 [my mesh] 顶点绘制范围从 [starts list v] 到 [ends list v] :: sensing
 ```
-Normally, how many instances are drawn is determined by the length of supplied lists.
-This block can be used to limit the amount of instances drawn to an even lower number.
-This can be useful together with partial list updates to be able to dynamically change amount of drawn instances without having to reupload the entire list. That is, preallocating space for some amount of instances in advance, but drawing less. When new instance needs to be added, using partial updates to update the instance data of the next unused instance and then increasing the limit by 1. To remove an instance, the last instance can be moved in it's place and then the limit reduced by 1.
+与 `顶点绘制范围` 积木块相同，但一次用于多个范围。
 
-Setting to any value below 1 is equivalent to setting it to Infinity.
-
-Default for mesh is Infinity.
+对于实现剔除很有用，因为它允许切换网格不同部分的可见性，而无需多次绘制调用的成本。
 
 ---
 ```scratch
-set [my mesh] texture coordinate offset UV (0) (0) :: sensing
+设置 [my mesh] 实例绘制上限 (10) :: sensing
 ```
-Used for offsetting texture UVs.
-Combined with textures with "repeat" mode and timer block, this can be used to very easily create meshes with scrolling textures.
+通常，绘制多少实例由提供的列表长度决定。
+此积木块可用于将绘制的实例数量限制为更低的数字。
+这对于与部分列表更新一起使用以动态更改绘制的实例数量而无需重新上传整个列表很有用。也就是说，提前为一定数量的实例预分配空间，但绘制更少。当需要添加新实例时，使用部分更新更新下一个未使用实例的实例数据，然后将限制增加 1。要删除实例，可以将最后一个实例移到它的位置，然后将限制减少 1。
 
-Default for mesh is 0,0.
+设置为任何低于 1 的值等同于设置为 Infinity。
+
+网格默认为 Infinity。
 
 ---
 ```scratch
-draw mesh [my mesh] :: sensing
+设置 [my mesh] 纹理坐标偏移 UV (0) (0) :: sensing
 ```
-Draws the specified mesh one or multiple (instancing) times, but only if it is valid.
+用于偏移纹理 UV。
+与"重复"模式的纹理和计时器积木块结合使用，这可以非常容易地创建具有滚动纹理的网格。
 
-Mesh is invalid and cannot be drawn if:
- - vertex positions are not set
- - lists that were uploaded to it imply mismatching amounts of vertices or instances
+网格默认为 0,0。
 
-This block may cause stutter when drawing something for the first time, as it will need to generate and compile shaders.
-
-
-### Textures <a name="blocks-textures"></a>
+---
 ```scratch
-(texture from URL [https://extensions.turbowarp.org/dango.png] :: sensing)
+绘制网格 [my mesh] :: sensing
 ```
-Creates texture from image at specified URL.
-Will show a prompt if URL is not approved.
-If an image fails to load, you can usually open browser console and see what the error is (F12 or Ctrl+Shift+I).
+绘制指定的网格一次或多次（实例化），但仅当它有效时。
+
+网格无效且无法绘制，如果：
+ - 未设置顶点位置
+ - 上传到它的列表暗示顶点或实例数量不匹配
+
+此积木块在首次绘制某物时可能导致卡顿，因为它需要生成和编译着色器。
+
+
+### 纹理 <a name="blocks-textures"></a>
+```scratch
+(从 URL 创建纹理 [https://extensions.turbowarp.org/dango.png] :: sensing)
+```
+从指定 URL 的图像创建纹理。
+如果 URL 未获批准，将显示提示。
+如果图像加载失败，你通常可以打开浏览器控制台并查看错误是什么（F12 或 Ctrl+Shift+I）。
 
 > [!WARNING]
-> Websites cannot access any data from any other websites unless those other sites explicetly allow it. The correct term for it is CORS (Cross Origin Resource Sharing). You can use some CORS proxy to bypass it.
+> 网站不能访问任何其他网站的任何数据，除非那些其他网站明确允许。正确的术语是 CORS（跨源资源共享）。你可以使用一些 CORS 代理来绕过它。
 
-🐢 Texture gets loaded with a delay.
-
----
-```scratch
-(texture from costume [costume1 v] :: sensing)
-```
-Creates texture from costume.
-🐢 **Texture gets loaded with a delay. When doing image processing, do not attempt to load and instantly draw. It would not show up!**
-
-**Do not forget: bitmap costumes have 2x2 subpixels, which here are counted as pixels.** So do not be surprized when your seemingly 8x8 costume turns into 16x16 texture.
-
-**When using TurboWarp Packager, you need to disable "Remove raw asset data after loading to save RAM" in order for this block to work.**
+🐢 纹理会延迟加载。
 
 ---
 ```scratch
-(texture from text [Hello World!] font [italic bold 32px sans-serif] color (#ffff00) :: sensing)
-(texture from text [Hello World!] font [italic bold 32px sans-serif] color (#ffff00) border (5) (#000000) :: sensing)
+(从造型创建纹理 [costume1 v] :: sensing)
 ```
-Creates texture with specified text.
-⚡ Texture gets loaded instantly.
-Border extends texture by it's value of pixels in all 4 directions.
-For more information on the font argument syntax, see [CSS Specification](https://drafts.csswg.org/css-fonts/#font-prop).
+从造型创建纹理。
+🐢 **纹理会延迟加载。在进行图像处理时，不要尝试加载并立即绘制。它不会显示出来！**
+
+**别忘了：位图造型有 2x2 子像素，这里被计为像素。** 所以当你看似 8x8 的造型变成 16x16 纹理时不要惊讶。
+
+**使用 TurboWarp Packager 时，你需要禁用"Remove raw asset data after loading to save RAM"（加载后删除原始资源数据以节省 RAM）才能使此积木块工作。**
 
 ---
 ```scratch
-(texture from list [list v] at (1) of size (16) (16) :: sensing)
+(从文本创建纹理 [Hello World!] 字体 [italic bold 32px sans-serif] 颜色 (#ffff00) :: sensing)
+(从文本创建纹理 [Hello World!] 字体 [italic bold 32px sans-serif] 颜色 (#ffff00) 边框 (5) (#000000) :: sensing)
 ```
-Creates texture from RGBA data in a list. Each pixel is represented with list 4 elements, each in range between 0 and 255. Elements are: red, green, blue, alpha.
-Note that it is not alpha, red, green, blue used by many pen projects on scratch.
-⚡ Texture gets loaded instantly.
+创建具有指定文本的纹理。
+⚡ 纹理立即加载。
+边框在所有 4 个方向上将纹理扩展其值的像素数。
+有关字体参数语法的更多信息，请参见 [CSS 规范](https://drafts.csswg.org/css-fonts/#font-prop)。
 
 ---
 ```scratch
-(texture of size (16) (16) :: sensing)
+(从列表 [list v] 第 (1) 项创建大小 (16) (16) 的纹理 :: sensing)
 ```
-Creates black texture of given size.
-⚡ Texture gets loaded instantly.
+从列表中的 RGBA 数据创建纹理。每个像素用列表 4 个元素表示，每个元素在 0 到 255 之间。元素是：红、绿、蓝、alpha。
+注意这不是 Scratch 上许多画笔项目使用的 alpha、红、绿、蓝。
+⚡ 纹理立即加载。
 
 ---
 ```scratch
-(texture from video [my video] :: sensing)
+(大小 (16) (16) 的纹理 :: sensing)
 ```
-Creates texture from the current frame of the video. For video to move, needs to be called every frame.  
-⚡ Texture gets loaded instantly.
-
-
-### Text measurement <a name="blocks-text-measurement"></a>
-```scratch
-measure text [Hello World!] font [italic bold 32px sans-serif] :: sensing
-(measured (up v) size ::sensing)
-```
-Used for measuring how the text texture was or will be generated.
-Outputs 5 sizes. Sizes can be negative.
-
-
-### Fonts <a name="blocks-fonts"></a>
-```scratch
-(font [Sans Serif] of size [32] :: sensing)
-```
-Used for getting internal names of default and custom fonts. It is not neccesary to use.
-
-
-### View transformations <a name="blocks-view-transformations"></a>
-```scratch
-configure [to projected from view space v] transformation :: sensing
-```
-Used for switching between which of the few transformations is currently active for editing.
-Transformations `to world space from model space`, `to view space from world space`, `to projected from view space` are 3 sequential transformation used for drawing, explained at the top of this page.
-Transformation `importing from file` affects how the block below works:
-```scratch
-set [my mesh] from [.obj .mtl v] [list v] :: sensing
-```
-Transformation `custom` does not affect anything. Use it for your own calculations.
+创建给定大小的黑色纹理。
+⚡ 纹理立即加载。
 
 ---
 ```scratch
-start with perspective FOV (90) near (0.1) far (1000) :: sensing
+(从视频创建纹理 [my video] :: sensing)
 ```
-Overwrites currently active transformation with the viewspace to clipspace conversion transformation for perspective projection.
-**Camera is assumed to be facing negative Z.**
-FOV is verical field of view and it is measured in degrees.
-Anything closer than "near" or further than "far" will be clipped.
+从视频的当前帧创建纹理。要使视频移动，需要每帧调用。  
+⚡ 纹理立即加载。
 
-Something to keep in mind is that depth buffer has limited precision.
-The whole range between "near" and "far" get mapped to the whole range of depth buffer.
-So, setting near and far to be close to one another makes depth more precise.
-Setting near and far to vastly different value will cause Z-fighting issues caused by lack of precision.
 
-**Another thing to keep in mind is that this block requires aspect ratio.** To not bother it's users, it was decided to make it take aspect ratio of the currently active rendering target. Most projects do not change aspect ratio while running, but if you plan to support that, recalculate this every time after getting:
+### 文本测量 <a name="blocks-text-measurement"></a>
 ```scratch
-when resolution changes :: sensing hat
+测量文本 [Hello World!] 字体 [italic bold 32px sans-serif] :: sensing
+(测量的 [上 v] 大小 :: sensing)
+```
+用于测量文本纹理是如何生成或将要生成的。
+输出 5 个尺寸。尺寸可以为负。
+
+
+### 字体 <a name="blocks-fonts"></a>
+```scratch
+(大小 [32] 的字体 [Sans Serif] :: sensing)
+```
+用于获取默认和自定义字体的内部名称。不是必须使用。
+
+
+### 视图变换 <a name="blocks-view-transformations"></a>
+```scratch
+配置 [从视图空间到投影 v] 变换 :: sensing
+```
+用于在少数几个变换之间切换当前正在编辑的是哪一个。
+变换 `从模型空间到世界空间`、`从世界空间到视图空间`、`从视图空间到投影` 是 3 个用于绘制的顺序变换，在本页顶部有解释。
+变换 `从文件导入` 影响以下积木块的工作方式：
+```scratch
+从 [.obj .mtl v] [list v] 设置 [my mesh] :: sensing
+```
+变换 `自定义` 不影响任何内容。用于你自己的计算。
+
+---
+```scratch
+以透视投影开始 FOV: (90) 近: (0.1) 远: (1000) :: sensing
+```
+用透视投影的视图空间到裁剪空间转换变换覆盖当前活动变换。
+**假设摄像机面向负 Z 方向。**
+FOV 是垂直视场角，以度为单位。
+任何比"近"更近或比"远"更远的内容将被裁剪。
+
+需要记住的是深度缓冲区精度有限。
+"近"和"远"之间的整个范围被映射到深度缓冲区的整个范围。
+因此，将近和远设置得彼此接近可以使深度更精确。
+将近和远设置得差异很大将导致因精度不足而产生的 Z-fighting 问题。
+
+**另一个需要记住的是此积木块需要宽高比。** 为了不麻烦用户，决定让它采用当前活动渲染目标的宽高比。大多数项目在运行时不会更改宽高比，但如果你计划支持这一点，请在获取以下内容后重新计算：
+```scratch
+当分辨率改变时 :: sensing hat
 ```
 
 ---
 ```scratch
-start with orthographic near (0.1) far (1000) :: sensing
+以正交投影开始 近: (0.1) 远: (1000) :: sensing
 ```
-Overwrites currently active transformation with the viewspace to clipspace conversion transformation for orthographic projection.
-**Camera is assumed to be facing negative Z.**
-Same regarding "near", "far", and aspect ratios as the block described above.
+用正交投影的视图空间到裁剪空间转换变换覆盖当前活动变换。
+**假设摄像机面向负 Z 方向。**
+关于"近"、"远"和宽高比与上述积木块相同。
 
 ---
 ```scratch
-start with no transformation :: sensing
+以无变换开始 :: sensing
 ```
-Overwrites currently active transformation with transformation that does nothing and keeps everything as is.
+用不做任何事并保持一切的变换覆盖当前活动变换。
 
 ---
 ```scratch
-start with [external source v] :: sensing
+以 [外部源 v] 开始 :: sensing
 ```
-Overwrites currently active transformation with transformation obtained from the external source. Hidden by default. External sources can be provided by other extensions.
+用从外部源获取的变换覆盖当前活动变换。默认隐藏。外部源可以由其他扩展提供。
 
 ---
 ```scratch
-start with saved in [list v] at (1) :: sensing
+以保存在 [list v] 第 (1) 项开始 :: sensing
 ```
-Overwrites currently active transformation with transformation from the list. Reads 16 values starting from the index specified by the second argument.
+用列表中的变换覆盖当前活动变换。从第二个参数指定的索引开始读取 16 个值。
 
 ---
 ```scratch
-move X:(0) Y:(0) Z:(0) :: sensing
-rotate around [X v] by (0) degrees :: sensing
-scale X:(1) Y:(1) Z:(1) :: sensing
-skew [X v] by (1) [X v] :: sensing
+移动 X: (0) Y: (0) Z: (0) :: sensing
+绕 [X v] 轴旋转 (0) 度 :: sensing
+缩放 X: (1) Y: (1) Z: (1) :: sensing
+沿 [X v] 倾斜 (1) [X v] :: sensing
 ```
-Applies change to currently selected transformation
+对当前选中的变换应用更改。
 
 ---
 ```scratch
-wrapper {
+包装器 {
 } :: sensing
 ```
-Saves all 5 transformations (not just currently selected) when entering, restores when exiting. For technical reasons does not currently restore, if the script inside called:
+在进入时保存所有 5 个变换（不仅是当前选中的），在退出时恢复。由于技术原因，如果内部脚本调用了以下内容，目前不会恢复：
 ```scratch
-stop [this script v]
+停止 [这个脚本 v]
 ```
 
-**Also has 1 frame delay to exit, because it is technically treated as a loop. And similarly to loops, you can use `run without screen refresh` custom blocks to remove the delay.**
+**另外退出时有 1 帧延迟，因为它在技术上被视为循环。与循环类似，你可以使用 `运行时不刷新屏幕` 自定义积木块来消除延迟。**
 
 ---
 ```scratch
-save into [list v] at (1) :: sensing
+保存到 [list v] 第 (1) 项 :: sensing
 ```
-Overwites 16 elements in list starting from the specified item, with the numbers representing currently selected transformation.
+从指定项开始覆盖列表中的 16 个元素，用代表当前选中变换的数字。
 
 ---
 ```scratch
-reset transformation's (offset v) :: sensing
+重置变换的 [偏移 v] :: sensing
 ```
-Resets offset or rotation of the transformation.
+重置变换的偏移或旋转。
 
-Rotation without offset can be useful for transforming directions or drawing skyboxes.
-Offset without rotation can be useful for positioning something at the end of the long chain of transformations, but rotating it independently afterwards relatively to the world.
+无偏移的旋转可用于变换方向或绘制天空盒。
+无旋转的偏移可用于在长变换链的末尾定位某物，但之后相对于世界独立旋转它。
 
 
-### Manual transformations <a name="blocks-manual-transformations"></a>
+### 手动变换 <a name="blocks-manual-transformations"></a>
 ```scratch
-transform X:(0) Y:(0) Z:(0) :: sensing
+变换 X: (0) Y: (0) Z: (0) :: sensing
 ```
-Transforms point using currently selected transformation. It is the fastest way to transform coordinates, especially if there are a lot of them.
+使用当前选中的变换变换点。这是变换坐标的最快方式，特别是在有很多坐标的情况下。
 
 ---
 ```scratch
-transform X:(0) Y:(0) Z:(0) from [world space v] to [model space v] :: sensing
-transform direction X:(0) Y:(0) Z:(0) from [world space v] to [model space v] :: sensing
+变换 X: (0) Y: (0) Z: (0) 从 [世界空间 v] 到 [模型空间 v] :: sensing
+变换方向 X: (0) Y: (0) Z: (0) 从 [世界空间 v] 到 [模型空间 v] :: sensing
 ```
-Transforms point from specified coordinate system to another. Convenient, but slower.
-Transform direction only applies rotations and does not apply offsets.
+将点从指定的坐标系变换到另一个。方便但较慢。
+变换方向仅应用旋转，不应用偏移。
 
-"projected" is pre-division clip-space coordinates.
-"projected (scratch units)" does division by W and scaling to current stage size (e.g. 480x360). It can be used to determine where some point will end up on the screen with the current transformation to position sprite over it or draw something with pen.
+"投影"是除法前的裁剪空间坐标。
+"投影（Scratch 单位）"进行除以 W 并缩放到当前舞台大小（例如 480x360）。它可用于确定某个点在当前变换下将最终出现在屏幕上的位置，以便将角色定位在其上方或用画笔绘制某些内容。
 
 
-### Rendering into textures <a name="blocks-rendertargets"></a>
+### 渲染到纹理 <a name="blocks-rendertargets"></a>
 ```scratch
-render to canvas :: sensing
+渲染到画布 :: sensing
 ```
-Selects simple3D layer as an active render target.
+选择 simple3D 层作为活动渲染目标。
 
 ---
 ```scratch
-render to texture of [my mesh] :: sensing
+渲染到 [my mesh] 的纹理 :: sensing
 ```
-Selects 2D texture of specified mesh as an active render target.
-Fails if there is no texture or texture is not 2D.
+选择指定网格的 2D 纹理作为活动渲染目标。
+如果没有纹理或纹理不是 2D 则失败。
 
 ---
 
 ```scratch
-render to cube texture (X+ v) of [my mesh] :: sensing
+渲染到 [my mesh] 的立方体纹理 (X+ v) :: sensing
 ```
-Selects side of cube texture of specified mesh as an active render target.
-Fails if there is no texture, texture is not cube or side is not valid.
+选择指定网格的立方体纹理的面作为活动渲染目标。
+如果没有纹理、纹理不是立方体或面无效则失败。
 
 ---
 ```scratch
-read current render target into [list v] :: sensing
+将当前渲染目标读入 [list v] :: sensing
 ```
-Reads the pixel data of the current render target into the list.
-There are 4 values per pixels: red, greeen, blue, alpha.
-Values should be in range between 0 and 255.
+将当前渲染目标的像素数据读入列表。
+每个像素有 4 个值：红、绿、蓝、alpha。
+值应在 0 到 255 之间。
 
-Internally extension stores everything with premultiplied alpha. When reading this, it divides by alpha to restore directly respreseted colors.
-
----
-```scratch
-(render target [width v] :: sensing)
-```
-Allows reading properties of the current render target.
+内部扩展使用预乘 alpha 存储所有内容。读取时，它除以 alpha 以恢复直接表示的颜色。
 
 ---
 ```scratch
-set [viewport box v] to X1:(0) Y1:(0) X2:(100) Y2:(100) :: sensing
-set [clipping box v] to X1:(0) Y1:(0) X2:(100) Y2:(100) :: sensing
-set [readback box v] to X1:(0) Y1:(0) X2:(100) Y2:(100) :: sensing
+(渲染目标 [宽度 v] :: sensing)
 ```
-Configures custom rectangular areas for different purposes for the currently active render target.
-Viewport box specifies the area to which the rendered image will be stretched to cover from it's normal -1 to 1 range.
-Clipping box specifies the area in which pixels are allowed to be modified.
-Readback box specifies the area from which reading to list and reading to data URI blocks will read the pixels.
+允许读取当前渲染目标的属性。
+
+---
+```scratch
+设置 [视口框 v] 为 X1: (0) Y1: (0) X2: (100) Y2: (100) :: sensing
+设置 [裁剪框 v] 为 X1: (0) Y1: (0) X2: (100) Y2: (100) :: sensing
+设置 [回读框 v] 为 X1: (0) Y1: (0) X2: (100) Y2: (100) :: sensing
+```
+为当前活动渲染目标的不同用途配置自定义矩形区域。
+视口框指定渲染图像将从其正常 -1 到 1 范围拉伸覆盖的区域。
+裁剪框指定允许修改像素的区域。
+回读框指定读取到列表和读取到 data URI 积木块将从中读取像素的区域。
 
 > [!NOTE]  
-> Coordinates are specified in **real pixels** starting from the bottom left corner, **not scratch units**. You can get the size of the Simple3D layer in pixels from either:
+> 坐标以**实际像素**指定，从左下角开始，**不是 Scratch 单位**。你可以从以下任一获取 Simple3D 层的像素大小：
 ```scratch
-(stage width :: sensing)
-(stage height :: sensing)
+(舞台宽度 :: sensing)
+(舞台高度 :: sensing)
 
-(render target [width v] :: sensing)
-(render target [height v] :: sensing)
+(渲染目标 [宽度 v] :: sensing)
+(渲染目标 [高度 v] :: sensing)
 ```
-And while it may match scratch units while the high quality pen is disabled, when **high quality pen is on**, the resolution will often be higher. Your projects need to account for that.
+虽然在高品质画笔禁用时它可能与 Scratch 单位匹配，但当**高品质画笔开启**时，分辨率通常会更高。你的项目需要考虑这一点。
 
 > [!NOTE]  
-> Those custom areas can either be set or not set. When they aren't set, they use X1:`0` Y1:`0` X2:`render target width` Y2:`render target height` and automatically update with resolution changes. If you set them to custom values, you need to handle rescaling manually.
+> 这些自定义区域可以设置或不设置。未设置时，它们使用 X1:`0` Y1:`0` X2:`渲染目标宽度` Y2:`渲染目标高度` 并随分辨率更改自动更新。如果你将它们设置为自定义值，则需要手动处理重新缩放。
 
 ---
 ```scratch
-clear [viewport box v] :: sensing
-clear [clipping box v] :: sensing
-clear [readback box v] :: sensing
+清除 [视口框 v] :: sensing
+清除 [裁剪框 v] :: sensing
+清除 [回读框 v] :: sensing
 ```
-Removes the custom rectangular areas configured by the block described above.
+移除上述积木块配置的自定义矩形区域。
 
 
-### Tinting and fog <a name="blocks-tinting-fog"></a>
+### 着色和雾 <a name="blocks-tinting-fog"></a>
 ```scratch
-set global color [multiplier v] to R: (1) G:(1) B:(1) A:(1) :: sensing
-set global color [adder v] to R: (0) G:(0) B:(0) A:(0) :: sensing
+设置全局颜色 [乘数 v] 为 R: (1) G: (1) B: (1) A: (1) :: sensing
+设置全局颜色 [加数 v] 为 R: (0) G: (0) B: (0) A: (0) :: sensing
 ```
-Allows setting up linear transformation to color.
-Input color RGBA is multiplied by "multiplier" and then the "adder" values are added.
-Here 0 is fully dark and 1 is full brightness. Values above 1 or below 0 will get clamped.
-This is a global value. It is okay to change it many times per frame.
+允许设置对颜色的线性变换。
+输入颜色 RGBA 乘以"乘数"，然后加上"加数"值。
+这里 0 是完全暗，1 是全亮。高于 1 或低于 0 的值将被钳制。
+这是一个全局值。每帧更改多次是可以的。
 
-Deafult multiplier is R:1 G:1 B:1 A:1.
-Deafult adder is R:0 G:0 B:0 A:0.
+默认乘数是 R:1 G:1 B:1 A:1。
+默认加数是 R:0 G:0 B:0 A:0。
 
 ---
 ```scratch
-turn fog (on v) :: sensing
+雾 [开 v] :: sensing
 ```
-Used for toggling fog on or off. Accepts a boolean argument (true or false).
-This is a global value. It is okay to change it many times per frame.
-Default is off.
+用于打开或关闭雾。接受布尔参数（true 或 false）。
+这是一个全局值。每帧更改多次是可以的。
+默认为关闭。
 
 ---
 ```scratch
-set fog color R:(1) G:(1) B:(1) :: sensing
+设置雾颜色 R: (1) G: (1) B: (1) :: sensing
 ```
-Sets fog color.
-Default is R:1 G:1 B:1.
+设置雾颜色。
+默认为 R:1 G:1 B:1。
 
 ---
 ```scratch
-set fog distance near: (10) far: (100) :: sensing
+设置雾距离 近: (10) 远: (100) :: sensing
 ```
 
-Sets fog distance.
-`Near` sets the distance at which mesh starts transition into the fog color.
-`Far` sets the distance at which mesh fully finishes transitioning into the fog color.
+设置雾距离。
+`近` 设置网格开始过渡到雾颜色的距离。
+`远` 设置网格完全完成过渡到雾颜色的距离。
 
-Setting `near` to value greater than `far` results is a fog that starts close, and fades off with a distance.
-Setting both arguments to the same value results in division by 0 and leads to undefined results, so avoid doing it.
+将 `近` 设置为大于 `远` 的值会导致雾从近处开始，并随距离衰减。
+将两个参数设置为相同值会导致除以 0 并导致未定义结果，因此避免这样做。
 
-Default is near:10 far:100.
+默认为 近:10 远:100。
 
 ---
 ```scratch
-set fog [view space v] origin at X: (0) Y: (0) Z: (0) :: sensing
+设置雾 [视图空间 v] 原点为 X: (0) Y: (0) Z: (0) :: sensing
 ```
-Specifies the center point around which the fog will be drawn.
-Default is X:0 Y:0 Z:0 in view space.
+指定将围绕其绘制雾的中心点。
+默认是视图空间中的 X:0 Y:0 Z:0。
 
-### Resolution changes <a name="blocks-resolution"></a>
+### 分辨率更改 <a name="blocks-resolution"></a>
 
-Here "canvas" refers to the skin into which Simple3D renders all of its grapics.  
-By default canvas is displayed on Simple3D layer. 
-By default the size of canvas in scratch units matches the size of the stage in scratch units, so it covers the whole stage.  
-By default canvas has resolution that mimics the behavior of pen layer:  
-- When high quality pen is disabled, canvas has resolution that matches the size of the stage in scratch units.  
-- When high quality pen is enabled, canvas has resolution that matches the resolution of the stage in actual screen pixels.  
+这里"canvas"指的是 Simple3D 渲染其所有图形的皮肤。  
+默认情况下，canvas 显示在 Simple3D 层上。
+默认情况下，canvas 以 Scratch 单位表示的大小与舞台以 Scratch 单位表示的大小匹配，因此它覆盖整个舞台。  
+默认情况下，canvas 的分辨率模仿画笔层的行为：  
+- 当高品质画笔禁用时，canvas 的分辨率与舞台以 Scratch 单位表示的大小匹配。  
+- 当高品质画笔启用时，canvas 的分辨率与实际屏幕像素中的舞台分辨率匹配。  
 
-Canvas can also be displayed on sprites. Simple3D layer can be turned off.  
-Resolution of canvas and size at which it is displayed can be changed. The way it it stretched (blurry or pixelated) can also be changed.
+Canvas 也可以显示在角色上。Simple3D 层可以关闭。  
+Canvas 的分辨率和显示大小可以更改。它被拉伸的方式（模糊或像素化）也可以更改。
 
 ---
 
 ```scratch
-when stage resolution changes :: sensing hat
-(horizontal stage resolution :: sensing)
-(vertical stage resolution :: sensing)
+当舞台分辨率改变时 :: sensing hat
+(水平舞台分辨率 :: sensing)
+(垂直舞台分辨率 :: sensing)
 ```
-Reporter blocks return the resolution at which scratch stage is rendered in actual screen pixels.
-Hat block triggers when that resolution changes.
+报告积木块返回舞台以实际屏幕像素渲染的分辨率。
+当该分辨率更改时，帽子积木块触发。
 
 ---
 ```scratch
-(stage width :: sensing)
-(stage height :: sensing)
+(舞台宽度 :: sensing)
+(舞台高度 :: sensing)
 ```
-Return the size of stage in scratch units. (e.g. 480x360 or 640x360)
+返回舞台以 Scratch 单位表示的大小。（例如 480x360 或 640x360）
 
 ---
 ```scratch
-<high quality pen enabled? :: sensing>
+<高品质画笔已启用？ :: sensing>
 ```
-Returns whether the high quality pen is enabled or not.
+返回高品质画笔是否启用。
 
 ---
 ```scratch
-set canvas [size v] to X:(100) Y:(100) :: sensing
-set canvas [resolution v] to X:(100) Y:(100) :: sensing
-clear canvas [size v] :: sensing
-clear canvas [resolution v] :: sensing
+设置画布 [大小 v] 为 X: (100) Y: (100) :: sensing
+设置画布 [分辨率 v] 为 X: (100) Y: (100) :: sensing
+清除画布 [大小 v] :: sensing
+清除画布 [分辨率 v] :: sensing
 ```
-resolution - changes resolution at which simple3D layer is rendered.
-size - changes the size in scratch units at which simple3D layer is displayed on the stage.
+分辨率 - 更改 simple3D 层渲染的分辨率。
+大小 - 更改 simple3D 层在舞台上显示的以 Scratch 单位表示的大小。
 
 ---
 ```scratch
-make scaled canvas look [pixelated v] :: sensing
-make scaled canvas look [blurry v] :: sensing
+使缩放画布看起来 [像素化 v] :: sensing
+使缩放画布看起来 [模糊 v] :: sensing
 ```
-Changes how scaled canvas looks.
+更改缩放 canvas 的外观。
 
-Default is "pixelated".
+默认为"像素化"。
 
 ---
 ```scratch
-when canvas resolution changes :: sensing hat
-(canvas width :: sensing)
-(canvas height :: sensing)
+当画布分辨率改变时 :: sensing hat
+(画布宽度 :: sensing)
+(画布高度 :: sensing)
 ```
-Reporter blocks return the resolution of canvas, not size at which it is displayed.
-Hat block triggers when that resolution changes.
+报告积木块返回 canvas 的分辨率，而不是其显示的大小。
+当该分辨率更改时，帽子积木块触发。
 
 ---
 ```scratch
-display canvas on myself :: sensing hat
-restore my look :: sensing
+在我自己上显示画布 :: sensing hat
+恢复我的外观 :: sensing
 ```
 
-Blocks to display Simple3D canvas as skin on the current sprite. Works similarly to the Skins extension.  
-
----
-```scratch
-set Simple3D layer visibility to (visible v) :: sensing
-```
-Shows or hides simple3D layer.  
-Hiding Simple3D layer is primarily useful, when canvas is displayed on another sprite.  
-Accepts booleans true and false, not strings "visible" and "hidden".  
+将 Simple3D canvas 作为皮肤显示在当前角色上的积木块。工作方式类似于 Skins 扩展。  
 
 ---
 ```scratch
-reset everything with antialiasing (on v) :: sensing
+设置 Simple3D 层可见性为 [可见 v] :: sensing
 ```
-Same as "reset everything" block, but with control over antialiasing.  
-Accepts booleans true and false, not strings "on" and "off".  
+显示或隐藏 simple3D 层。  
+隐藏 Simple3D 层主要在 canvas 显示在另一个角色上时有用。  
+接受布尔值 true 和 false，而不是字符串"可见"和"隐藏"。  
+
+---
+```scratch
+重置所有内容并设置抗锯齿 [开 v] :: sensing
+```
+与"重置所有内容"积木块相同，但可以控制抗锯齿。  
+接受布尔值 true 和 false，而不是字符串"开"和"关"。  
 
 > [!NOTE]  
-> WebGL does not provide any way of toggling antialiasing after WebGL context has already been created, and there is no easy way of transferring resources between WebGL contexts.  
+> WebGL 不提供任何在 WebGL 上下文已创建后切换抗锯齿的方法，并且没有简单的方法在 WebGL 上下文之间传输资源。  
 
 
-## Integrations with other extensions <a name="ext-integration"></a>
+## 与其他扩展的集成 <a name="ext-integration"></a>
 
-Simple 3D can have integrations with other extensions. If you are an extension developer, see `Scratch.vm.runtime.ext_xeltallivSimple3Dapi` for that.
+Simple 3D 可以与其他扩展集成。如果你是扩展开发者，请参阅 `Scratch.vm.runtime.ext_xeltallivSimple3Dapi`。
 
-### Augmented Reality extension <a name="ar-integration"></a>
+### 增强现实扩展 <a name="ar-integration"></a>
 
-While it is possible to upload all 16 components from matrices provided by Augmented Reality extension into transforms of this extension,
+虽然可以将增强现实扩展提供的矩阵中的所有 16 个分量上传到此扩展的变换中，
 
 ```scratch
-configure [to projected from view space v] transformation :: sensing
-set [i v] to (0)
-repeat (16)
-change [i v] by (1)
-replace item (i) of [list v] with (item (i) of [projection v] matrix :: #d10000)
+配置 [从视图空间到投影 v] 变换 :: sensing
+将 [i v] 设为 (0)
+重复 (16)
+将 [i v] 增加 (1)
+替换 [list v] 的第 (i) 项为 (projection 矩阵的第 (i) 项 :: #d10000)
 end
-start with saved in [list v] at (0) :: sensing
+以保存在 [list v] 第 (0) 项开始 :: sensing
 ```
-to make this process easier, an extra feature was added.
+为了使此过程更容易，添加了一个额外功能。
 
-When Simple 3D extension and Augmented Reality extension are present in the project at the same time, users get access to the following extra blocks:
+当 Simple 3D 扩展和增强现实扩展同时存在于项目中时，用户可以使用以下额外积木块：
 ```scratch
-start with (AR: combined v) :: sensing
-start with (AR: view to projected v) :: sensing
-start with (AR: view to world v) :: sensing
-start with (AR: world to view v) :: sensing
+以 (AR: 组合 v) 开始 :: sensing
+以 (AR: 视图到投影 v) 开始 :: sensing
+以 (AR: 视图到世界 v) 开始 :: sensing
+以 (AR: 世界到视图 v) 开始 :: sensing
 ```
-Those blocks copy values from AR extension identically to the repeat loop example above, but do it in 1 block.
-An example of a simple 3D project using both extension is shown below: <a name="ar-example"></a>
+这些积木块与上面的重复循环示例完全相同地从 AR 扩展复制值，但在 1 个积木块中完成。
+一个同时使用两个扩展的简单 3D 项目示例如下：<a name="ar-example"></a>
 ```scratch
-when flag clicked
-enter AR mode :: #d10000
-create mesh [my mesh] :: sensing
-set [my mesh] from [obj mtl v] [my 3D model v] :: sensing
+当绿旗被点击
+进入 AR 模式 :: #d10000
+创建网格 [my mesh] :: sensing
+从 [obj mtl v] [my 3D model v] 设置 [my mesh] :: sensing
 forever
-configure [to projected from view space v] transformation :: sensing
-start with (AR: view to projected v) :: sensing
-configure [to view space from world space v] transformation :: sensing
-start with (AR: world to view v) :: sensing
-clear [color and depth v] :: sensing
-draw mesh [my mesh] :: sensing
+配置 [从视图空间到投影 v] 变换 :: sensing
+以 (AR: 视图到投影 v) 开始 :: sensing
+配置 [从世界空间到视图空间 v] 变换 :: sensing
+以 (AR: 世界到视图 v) 开始 :: sensing
+清除 [颜色和深度 v] :: sensing
+绘制网格 [my mesh] :: sensing
 end
 
-when stage clicked
-move everything by x: (hit position [x v] :: #d10000) y: (hit position [y v] :: #d10000) z: (hit position [z v] :: #d10000) :: #d10000
+当舞台被点击
+将所有内容移动 x: (hit position [x v] :: #d10000) y: (hit position [y v] :: #d10000) z: (hit position [z v] :: #d10000) :: #d10000
 ```
 
-### Lily/Video extension <a name="videos-integration"></a>
-Simple3D provides a dedicated block to read current frame of the video into a textures.
+### Lily/Video 扩展 <a name="videos-integration"></a>
+Simple3D 提供了一个专用积木块来将视频的当前帧读取到纹理中。
 ```scratch
-load video from URL [https://extensions.turbowarp.org/dango.mp4] as [my video] :: #557882
-set [my video] to [loop v] :: #557882
-start video [my video] on (myself v) :: #557882
+从 URL 加载视频 [https://extensions.turbowarp.org/dango.mp4] 为 [my video] :: #557882
+将 [my video] 设为 [循环 v] :: #557882
+在 (我自己 v) 上开始视频 [my video] :: #557882
 forever
-set [my mesh v] texture (texture from video [my video] :: sensing) [clamp to edge v] [pixelated v] :: sensing
+设置 [my mesh v] 纹理 (从视频创建纹理 [my video] :: sensing) [钳制到边缘 v] [像素化 v] :: sensing
 end
 ```

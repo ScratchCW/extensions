@@ -2035,7 +2035,7 @@ void main() {
         LAYERS: {
           type: ArgumentType.STRING,
           menu: "clearLayers",
-          defaultValue: Scratch.translate("color and depth"),
+          defaultValue: "color and depth",
         },
       },
       def: function ({ LAYERS }) {
@@ -5234,11 +5234,11 @@ void main() {
       },
       clearLayers: {
         acceptReporters: true,
-        items: Object.keys(ClearLayers),
+        items: Object.keys(ClearLayers).map(key => ({text: Scratch.translate(key), value: key})),
       },
       primitives: {
         acceptReporters: true,
-        items: Object.keys(Primitives),
+        items: Object.keys(Primitives).map(key => ({text: Scratch.translate(key), value: key})),
       },
       onOff: {
         acceptReporters: true,
@@ -5256,7 +5256,7 @@ void main() {
       },
       meshProperties: {
         acceptReporters: false,
-        items: ["exists", ...Object.keys(MeshPropFns)],
+        items: ["exists", ...Object.keys(MeshPropFns).map(key => ({text: Scratch.translate(key), value: key}))],
       },
       axis: {
         acceptReporters: false,
@@ -5290,11 +5290,11 @@ void main() {
       },
       blending: {
         acceptReporters: true,
-        items: Object.keys(Blendings),
+        items: Object.keys(Blendings).map(key => ({text: Scratch.translate(key), value: key})),
       },
       culling: {
         acceptReporters: true,
-        items: Object.keys(Cullings),
+        items: Object.keys(Cullings).map(key => ({text: Scratch.translate(key), value: key})),
       },
       skinningTransforms: {
         acceptReporters: true,
@@ -5445,7 +5445,7 @@ void main() {
       },
       depthTest: {
         acceptReporters: true,
-        items: Object.keys(DepthTests),
+        items: Object.keys(DepthTests).map(key => ({text: Scratch.translate(key), value: key})),
       },
       directions: {
         acceptReporters: true,
