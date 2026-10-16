@@ -5733,5 +5733,5 @@ void main() {
     };
   };
 
-  Scratch.extensions.register(new Extension());0
+  Scratch.extensions.register(new Extension());
 })(Scratch);
